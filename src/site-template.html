@@ -1,0 +1,255 @@
+<title>家安工程行 網站預覽</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* Layout: 上方預覽工具列（頁面切換、桌機／手機、區塊標示）＋ 模擬 Google 協作平台的網站本體。網站本體刻意只用淺色（品牌色固定）。 */
+:root{
+  --navy:#1F3A5F;--orange:#F28C28;--orange-t:#B45F12;--warm:#FAF8F5;--ink:#2B2B2B;--muted:#5B6470;--line:#E7E1D8;--soft:#EAF0F6;
+  --chrome:#E9E5DF;--chrome-ink:#2B2B2B;--tag-embed:#F28C28;--tag-native:#5B7FA8;
+  --f:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--chrome);color:var(--ink);font-family:var(--f);font-size:16px;line-height:1.65}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:#1B2430;color:#fff;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:#1B2430}
+.bar b{font-size:14px;letter-spacing:.04em}
+.bar .lbl{font-size:12.5px;color:#AEB8C5}
+.seg{display:inline-flex;border:1px solid #3A4656;border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;color:#D9DFE7;padding:5px 12px;cursor:pointer;font-size:13.5px}
+.seg button[aria-pressed="true"]{background:#F28C28;color:#1B2A3E;font-weight:700}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;color:#D9DFE7;cursor:pointer}
+.chk input{accent-color:#F28C28;width:16px;height:16px}
+.bar .sp{flex:1}
+
+.viewport{padding-block:20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.device{margin:0 auto;max-width:1280px;background:var(--warm);box-shadow:0 4px 24px rgba(0,0,0,.12);border-radius:10px;overflow:hidden;transition:max-width .3s}
+.device.phone{max-width:390px;border-radius:28px;border:10px solid #1B2430}
+
+/* ---- 模擬協作平台網站 ---- */
+.s-head{background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:12px 28px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-weight:900;font-size:20px;color:var(--navy);letter-spacing:.04em;text-decoration:none;cursor:pointer;background:none;border:0;padding:0}
+.logo span.m{width:36px;height:36px;border-radius:9px;background:var(--navy);display:grid;place-items:center}
+.logo svg{width:20px;height:20px;stroke:#F28C28;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.s-nav{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
+.s-nav button{border:0;background:transparent;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:15.5px;color:var(--ink)}
+.s-nav button:hover{background:var(--soft)}
+.s-nav button[aria-current="page"]{color:var(--navy);font-weight:700;box-shadow:inset 0 -3px 0 var(--orange)}
+.phone .s-head{padding:10px 14px}
+.phone .logo{font-size:17px}
+.phone .s-nav{margin-left:0;width:100%;overflow-x:auto;flex-wrap:nowrap;gap:2px}
+.phone .s-nav button{white-space:nowrap;font-size:14.5px;padding:6px 10px}
+
+.sec{position:relative;padding:28px 28px}
+.sec.tight{padding-top:8px;padding-bottom:8px}
+.phone .sec{padding:20px 14px}
+.phone .sec.tight{padding-top:6px;padding-bottom:6px}
+.in{max-width:1000px;margin:0 auto}
+.tag{display:none;position:absolute;top:6px;right:8px;z-index:5;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:999px;color:#fff;pointer-events:none}
+.show-tags .tag{display:block}
+.show-tags .sec.embed{outline:2px dashed var(--tag-embed);outline-offset:-6px}
+.show-tags .sec.native{outline:2px dashed var(--tag-native);outline-offset:-6px}
+.sec.embed .tag{background:var(--tag-embed);color:#1B2A3E}
+.sec.native .tag{background:var(--tag-native)}
+.sec iframe{display:block;width:100%;border:0;height:300px}
+
+.hero{position:relative;min-height:420px;display:flex;align-items:center;color:#fff;background:linear-gradient(100deg,rgba(20,38,62,.92) 0%,rgba(31,58,95,.78) 48%,rgba(31,58,95,.25) 100%),var(--ph);background-size:cover;background-position:center}
+.hero .in{width:100%}
+.hero h1{font-size:44px;line-height:1.25;margin:0 0 10px;letter-spacing:.04em;font-weight:900;text-wrap:balance}
+.hero p{font-size:19px;margin:0 0 22px;max-width:30em;color:rgba(255,255,255,.9)}
+.hero .btns{display:flex;flex-wrap:wrap;gap:12px}
+.sbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 24px;border-radius:12px;font-weight:700;font-size:17px;text-decoration:none;border:0;cursor:pointer}
+.sbtn.o{background:var(--orange);color:#1B2A3E}
+.sbtn.w{background:transparent;color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.85)}
+.sbtn.n{background:var(--navy);color:#fff}
+.hero .note{position:absolute;right:14px;bottom:10px;font-size:12px;color:rgba(255,255,255,.75)}
+.phone .hero{min-height:360px}
+.phone .hero h1{font-size:30px}
+.phone .hero p{font-size:16px}
+.banner{background:linear-gradient(100deg,rgba(20,38,62,.94),rgba(31,58,95,.7)),var(--ph);background-size:cover;background-position:center;color:#fff}
+.banner h1{font-size:34px;margin:0;letter-spacing:.04em}
+.banner p{margin:6px 0 0;color:rgba(255,255,255,.88);font-size:17px}
+.phone .banner h1{font-size:26px}
+
+.txt h2{font-size:26px;color:var(--navy);margin:0 0 10px}
+.txt p{margin:0 0 10px;max-width:46em;font-size:16.5px}
+.phone .txt h2{font-size:22px}
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:center}
+.phone .cols{grid-template-columns:1fr}
+.pimg{aspect-ratio:4/3;border-radius:12px;background:var(--soft) var(--ph) center/cover;display:grid;place-items:center;color:#6B7C93;font-size:14px}
+.gal{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.phone .gal{grid-template-columns:repeat(2,minmax(0,1fr))}
+.gal .pimg{aspect-ratio:1/1}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:16px;margin:0}
+.dl dt{color:var(--muted)}
+.dl dd{margin:0;font-weight:500}
+
+.gform{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;max-width:680px}
+.gform .gh{border-top:10px solid var(--navy);padding:18px 22px;border-bottom:1px solid var(--line)}
+.gform .gh h3{margin:0 0 4px;font-size:22px}
+.gform .gh p{margin:0;font-size:14px;color:var(--muted)}
+.gform .q{padding:14px 22px;border-bottom:1px solid #F0ECE6}
+.gform .q label{display:block;font-size:15px;margin-bottom:8px}
+.gform .q label i{color:#C5221F;font-style:normal}
+.gform .q .ln{height:30px;border-bottom:1px solid #C9C3BA;max-width:360px}
+.gform .q .opts{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14.5px;color:#454B53}
+.gform .q .opts span::before{content:"";display:inline-block;width:14px;height:14px;border:2px solid #9AA3AE;border-radius:3px;vertical-align:-2px;margin-right:6px}
+.gform .q .opts.r span::before{border-radius:50%}
+.gform .ft{padding:14px 22px;display:flex;justify-content:space-between;align-items:center}
+.gform .ft .sbtn{padding:8px 22px;font-size:15px}
+.map{aspect-ratio:16/7;border-radius:12px;background:
+  linear-gradient(90deg,transparent 49%,#fff 49%,#fff 51%,transparent 51%) 0 0/120px 120px,
+  linear-gradient(0deg,transparent 49%,#fff 49%,#fff 51%,transparent 51%) 0 0/120px 120px,
+  linear-gradient(35deg,transparent 48%,#F6D28B 48%,#F6D28B 52%,transparent 52%),
+  #E5EADF;display:grid;place-items:center;position:relative}
+.phone .map{aspect-ratio:4/3}
+.map .pin{background:#fff;border-radius:12px;padding:10px 14px;box-shadow:0 4px 14px rgba(0,0,0,.15);font-size:14px;display:flex;gap:8px;align-items:center}
+.map .pin svg{width:22px;height:22px;stroke:#C5221F;fill:none;stroke-width:2}
+
+.s-foot{background:#1B2430;color:#C9D1DB;padding:26px 28px;font-size:14px}
+.s-foot .in{display:flex;flex-wrap:wrap;gap:8px 28px;justify-content:space-between}
+.s-foot b{color:#fff}
+.phone .s-foot{padding:20px 14px}
+@media (max-width:640px){
+  .s-head{padding:10px 14px}.sec{padding:20px 14px}.sec.tight{padding-top:6px;padding-bottom:6px}
+  .s-nav{margin-left:0;width:100%;overflow-x:auto;flex-wrap:nowrap}.s-nav button{white-space:nowrap}
+  .hero h1{font-size:30px}.banner h1{font-size:26px}.cols{grid-template-columns:1fr}.gal{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .device.phone{border-width:0;border-radius:10px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="bar">
+  <b>網站預覽</b>
+  <span class="lbl">模擬 Google 協作平台排好後的樣子</span>
+  <span class="sp"></span>
+  <div class="seg" role="group" aria-label="預覽寬度">
+    <button type="button" id="vD" aria-pressed="true">桌機</button>
+    <button type="button" id="vM" aria-pressed="false">手機</button>
+  </div>
+  <label class="chk"><input type="checkbox" id="tags"> 標示區塊來源</label>
+</div>
+
+<div class="viewport">
+  <div class="device" id="device">
+    <header class="s-head">
+      <button type="button" class="logo" data-go="home"><span class="m"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5"/><path d="m9 14 2 2 4-4"/></svg></span>家安工程行</button>
+      <nav class="s-nav" id="snav" aria-label="網站頁面"></nav>
+    </header>
+    <main id="page"></main>
+    <footer class="s-foot"><div class="in">
+      <div><b>家安工程行</b>　讓家安心・施工安全・價格透明・售後有保障</div>
+      <div>電話 0936-665-982　｜　服務區域：高雄、台南、屏東</div>
+    </div></footer>
+  </div>
+</div>
+
+<script type="application/json" id="codes">/*__CODES__*/</script>
+<script>
+(function(){
+'use strict';
+var CODES=JSON.parse(document.getElementById('codes').textContent);
+var SO='<scr'+'ipt>',SC='</scr'+'ipt>';
+function ph(label,bg,fg){
+  var s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900"><rect width="1600" height="900" fill="'+bg+'"/>'+
+  '<g fill="none" stroke="'+fg+'" stroke-width="5" opacity=".5"><path d="M0 700 L380 420 L640 620 L980 300 L1600 760"/><circle cx="1240" cy="220" r="80"/></g>'+
+  '<text x="1560" y="860" text-anchor="end" font-family="sans-serif" font-size="34" fill="'+fg+'">'+label+'</text></svg>';
+  return 'url("data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s)+'")';
+}
+var HERO_PH=ph('【替換】師傅工作照（橫拍 16:9）','#3E5B80','#C9D6E6');
+var BAN_PH=ph('【替換】頁首照片','#3E5B80','#C9D6E6');
+
+function N(label,html,cls){return {t:'n',label:label,html:html,cls:cls||''};}
+function E(id){return {t:'e',id:id};}
+function banner(title,sub){return N('內建：標題橫幅','<div class="in"><h1>'+title+'</h1>'+(sub?'<p>'+sub+'</p>':'')+'</div>','banner');}
+function text(h,ps){return N('內建：文字方塊','<div class="in txt">'+(h?'<h2>'+h+'</h2>':'')+ps.map(function(p){return '<p>'+p+'</p>';}).join('')+'</div>');}
+function pimg(t){return '<div class="pimg" style="--ph:'+ph(t,'#DCE4EE','#7D90A8').replace(/"/g,'&quot;')+'"></div>';}
+
+var PAGES={
+ home:{name:'首頁',secs:[
+  N('內建：標題橫幅（背景照片＋按鈕）','<div class="in"><h1>讓家安心的<br>在地水電工程行</h1><p>水電、弱電、室內裝潢、泥作一次包辦。到府免費估價，報價清楚不加價，完工有保固。</p><div class="btns"><button type="button" class="sbtn o" data-go="contact">免費估價</button><button type="button" class="sbtn w" data-go="services">看服務項目</button></div></div>','hero'),
+  E('stats'),
+  text('',['家安工程行服務高雄、台南、屏東地區，提供水電維修、漏水檢測、浴室翻修、壁癌處理與室內裝潢。從諮詢、到府勘查到施工、保固，都由同一組師傅負責，讓您省心又安心。']),
+  E('services'),E('why'),E('ba'),E('reviews'),E('contact')]},
+ services:{name:'服務項目',secs:[
+  banner('服務項目','水電、弱電、室內裝潢、泥作，大小工程都接'),
+  E('services'),
+  N('內建：文字＋圖片（各服務詳細說明）','<div class="in cols">'+pimg('【替換】水電施工照')+'<div class="txt"><h2>水電工程</h2><p>漏水檢測、管線更新、配電箱更換、插座開關增設、熱水器安裝。老房子用電量變大，舊電線容易過熱，我們會先檢查再建議要不要更換。</p><p>其他服務的詳細說明，可以照同樣的「圖＋文」格式往下排。</p></div></div>'),
+  E('process'),E('faq'),E('contact')]},
+ works:{name:'施工實績',secs:[
+  banner('施工實績','每一件工程都拍照記錄，施工前後一目了然'),
+  E('ba'),
+  N('內建：圖片（施工過程相簿）','<div class="in txt"><h2>施工過程</h2><p>看不到的地方也做確實：配管、防水、配電箱整線。</p></div><div class="in gal">'+['配管','防水層','配電箱整線','磁磚對縫','天花板','完工清潔'].map(function(t){return pimg('【替換】'+t);}).join('')+'</div>'),
+  E('reviews'),E('contact')]},
+ shop:{name:'線上商城',secs:[
+  banner('線上商城','師傅自己在用、真心推薦的好物'),
+  E('products'),
+  text('購物說明',['所有商品都在我們的蝦皮／露天賣場販售，下單、付款、物流都由平台處理，有保障。','不確定該買哪一款？先 LINE 問師傅，我們幫您挑適合的規格。']),
+  N('內建：按鈕','<div class="in"><a class="sbtn o" href="#" onclick="return false">前往蝦皮賣場</a></div>','tight'),
+  E('contact')]},
+ contact:{name:'聯絡我們',secs:[
+  banner('聯絡我們','到府估價免費，報價清楚不加價'),
+  E('contact'),
+  N('內建：Google 表單','<div class="in"><div class="gform"><div class="gh"><h3>家安工程行 免費估價單</h3><p>填完後我們會在 1 個工作天內回電。現場照片可以直接傳 LINE 給我們。</p></div>'+
+   [['您的稱呼',1,'ln'],['聯絡電話',1,'ln'],['施工地點',1,'高雄|台南|屏東|其他','r'],['需要的服務',1,'水電|弱電|室內裝潢|泥作|其他'],['問題或需求描述',1,'ln'],['希望施工時間',0,'越快越好|一個月內|1–3 個月|還在評估','r']].map(function(q){
+     return '<div class="q"><label>'+q[0]+(q[1]?' <i>*</i>':'')+'</label>'+(q[2]==='ln'?'<div class="ln"></div>':'<div class="opts'+(q[3]?' r':'')+'">'+q[2].split('|').map(function(o){return '<span>'+o+'</span>';}).join('')+'</div>')+'</div>';
+   }).join('')+'<div class="ft"><span class="sbtn n">提交</span><span style="font-size:13px;color:#5B6470">（實際會嵌入您的 Google 表單）</span></div></div></div>'),
+  N('內建：地圖','<div class="in"><div class="map"><div class="pin"><svg viewBox="0 0 24 24"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>家安工程行（Google 地圖會顯示在這裡）</div></div></div>'),
+  N('內建：文字方塊（營業資訊）','<div class="in"><dl class="dl"><dt>電話</dt><dd>0936-665-982</dd><dt>LINE</dt><dd>【待補】</dd><dt>營業時間</dt><dd>【待補】</dd><dt>服務區域</dt><dd>高雄、台南、屏東</dd></dl></div>'),
+  E('faq')]}
+};
+var NAMES={stats:'信任數字列',services:'服務項目卡片',why:'為什麼選擇我們',process:'施工流程時間軸',ba:'施工前後對比滑桿',reviews:'客戶評價輪播',products:'精選商品',faq:'常見問題手風琴',contact:'聯絡按鈕列',promo:'公告／優惠橫幅'};
+var ORDER=['home','services','works','shop','contact'];
+
+var page=document.getElementById('page'),snav=document.getElementById('snav'),cur='home';
+function frameDoc(code){
+  return '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>'+code+
+  SO+'(function(){function s(){var el=document.querySelector("section");parent.postMessage({jiaanH:Math.ceil(el?el.getBoundingClientRect().height:document.body.scrollHeight)},"*")}'+
+  'if(window.ResizeObserver)new ResizeObserver(s).observe(document.body);window.addEventListener("load",s);setTimeout(s,80);setTimeout(s,900);'+
+  'document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(a&&/^(tel:|#$)/.test(a.getAttribute("href")))e.preventDefault()})})();'+SC+'</body></html>';
+}
+function render(){
+  snav.innerHTML=ORDER.map(function(k){return '<button type="button" data-go="'+k+'"'+(k===cur?' aria-current="page"':'')+'>'+PAGES[k].name+'</button>';}).join('');
+  page.innerHTML='';
+  PAGES[cur].secs.forEach(function(s){
+    var sec=document.createElement('section');
+    if(s.t==='n'){
+      sec.className='sec native '+s.cls;
+      if(s.cls==='hero')sec.style.setProperty('--ph',HERO_PH);
+      if(s.cls==='banner')sec.style.setProperty('--ph',BAN_PH);
+      sec.innerHTML='<span class="tag">'+s.label+'</span>'+s.html;
+    }else{
+      sec.className='sec embed tight';
+      sec.innerHTML='<span class="tag">嵌入區塊：'+NAMES[s.id]+'</span><div class="in"></div>';
+      var fr=document.createElement('iframe');fr.title=NAMES[s.id];fr.setAttribute('loading','eager');
+      fr.srcdoc=frameDoc(CODES[s.id]);
+      sec.querySelector('.in').appendChild(fr);
+    }
+    page.appendChild(sec);
+  });
+}
+window.addEventListener('message',function(e){
+  if(!e.data||!e.data.jiaanH)return;
+  page.querySelectorAll('iframe').forEach(function(f){if(f.contentWindow===e.source)f.style.height=e.data.jiaanH+'px';});
+});
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-go]');if(!b)return;
+  cur=b.getAttribute('data-go');render();
+  try{history.replaceState(null,'','#'+cur);}catch(_){}
+  document.getElementById('device').scrollIntoView({block:'start'});
+});
+var dev=document.getElementById('device');
+function setV(m){dev.classList.toggle('phone',m);document.getElementById('vD').setAttribute('aria-pressed',!m);document.getElementById('vM').setAttribute('aria-pressed',m);}
+document.getElementById('vD').onclick=function(){setV(false);};
+document.getElementById('vM').onclick=function(){setV(true);};
+document.getElementById('tags').onchange=function(e){dev.classList.toggle('show-tags',e.target.checked);};
+try{var h=location.hash.replace('#','');if(PAGES[h])cur=h;}catch(_){}
+render();
+})();
+</script>

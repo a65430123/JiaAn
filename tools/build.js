@@ -1,4 +1,4 @@
-// 產生 editor.html（可直接用瀏覽器開啟的編輯器）與 blocks/*.html（以範例內容輸出的各區塊嵌入碼）
+// 產生 editor.html（編輯器）、blocks/*.html（各區塊嵌入碼）與 site-preview.html（整站預覽）
 // 用法：node tools/build.js
 const fs = require('fs');
 const path = require('path');
@@ -41,6 +41,15 @@ const names = {
     report.push(`${names[id]}: 桌機 ${m.d}px / 手機 ${m.m}px`);
   }
   console.log(report.join('\n'));
+  // 網站預覽：把每個區塊的程式碼放進模擬的協作平台頁面
+  const codes = {};
+  for (const id of ids) codes[id] = await p.evaluate(id => window.JIAAN.buildCode(id, false), id);
+  const tpl = fs.readFileSync(path.join(root, 'src/site-template.html'), 'utf8');
+  const siteBody = tpl.replace('/*__CODES__*/', JSON.stringify(codes).replace(/</g, '\\u003c'));
+  fs.writeFileSync(path.join(root, 'src/site-preview-body.html'), siteBody);
+  fs.writeFileSync(path.join(root, 'site-preview.html'),
+    '<!doctype html>\n<html lang="zh-Hant">\n<head>\n<meta charset="utf-8">\n' +
+    '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n</head>\n<body>\n' + siteBody + '\n</body>\n</html>\n');
   if (errors.length) { console.error('ERRORS:\n' + errors.join('\n')); process.exitCode = 1; }
   await browser.close();
 })();
