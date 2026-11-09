@@ -1,0 +1,947 @@
+<title>家安工程行 區塊編輯器</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* Layout: 左側區塊清單｜中間內容表單｜右側即時預覽（桌機 1000px／手機 360px），窄螢幕改為上下堆疊 */
+:root{
+  --bg:#F1EEE9;--panel:#FFFFFF;--panel-2:#F8F6F2;--ink:#24282D;--muted:#626A74;--line:#E0D9CF;
+  --accent:#1F3A5F;--accent-soft:#E6ECF4;--accent-ink:#FFFFFF;--orange:#F28C28;--orange-ink:#1B2A3E;
+  --warn-bg:#FFF2E0;--warn:#8A4F0C;--ok:#2D7148;--danger:#B3261E;--stage:#E4DFD7;
+  --shadow:0 1px 2px rgba(20,30,45,.06),0 6px 18px rgba(20,30,45,.06);
+  --f:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11151B;--panel:#1A2029;--panel-2:#212834;--ink:#E9E5DE;--muted:#9BA4AF;--line:#2E3845;
+  --accent:#93B5E2;--accent-soft:#233247;--accent-ink:#0E1620;--orange:#F39A42;--orange-ink:#1B1206;
+  --warn-bg:#3A2A14;--warn:#F3C27E;--ok:#82CFA0;--danger:#FF8A80;--stage:#0C1015;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151B;--panel:#1A2029;--panel-2:#212834;--ink:#E9E5DE;--muted:#9BA4AF;--line:#2E3845;
+  --accent:#93B5E2;--accent-soft:#233247;--accent-ink:#0E1620;--orange:#F39A42;--orange-ink:#1B1206;
+  --warn-bg:#3A2A14;--warn:#F3C27E;--ok:#82CFA0;--danger:#FF8A80;--stage:#0C1015;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.6;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-block:14px;border-bottom:1px solid var(--line);background:var(--panel)}
+.mark{width:38px;height:38px;border-radius:10px;background:#1F3A5F;display:grid;place-items:center;flex:none}
+.mark svg{width:22px;height:22px;stroke:#F28C28;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.top h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.02em}
+.top .sub{font-size:13px;color:var(--muted)}
+.status{margin-left:auto;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block}
+
+.app{display:grid;grid-template-columns:220px minmax(0,1fr);gap:20px;padding-block:20px;align-items:start}
+.nav{position:sticky;top:12px;display:flex;flex-direction:column;gap:4px}
+.nav h2{font-size:12px;letter-spacing:.12em;color:var(--muted);margin:14px 10px 4px;font-weight:700}
+.nav h2:first-child{margin-top:0}
+.nav button{display:flex;align-items:center;gap:10px;text-align:left;width:100%;border:0;background:transparent;padding:8px 10px;border-radius:10px;cursor:pointer;color:var(--ink)}
+.nav button:hover{background:var(--panel)}
+.nav button[aria-current="true"]{background:var(--accent);color:var(--accent-ink)}
+.nav .n{font-size:12px;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-weight:700;flex:none;font-variant-numeric:tabular-nums}
+.nav button[aria-current="true"] .n{background:rgba(255,255,255,.18);color:inherit}
+.nav .dot{margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--orange)}
+
+.work{display:grid;grid-template-columns:minmax(320px,420px) minmax(0,1fr);gap:20px;align-items:start;min-width:0}
+.work.full{grid-template-columns:minmax(0,1fr)}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);min-width:0}
+.pane-h{padding:16px 18px;border-bottom:1px solid var(--line)}
+.pane-h h2{margin:0;font-size:19px}
+.pane-b{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.meta{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13.5px;margin-top:10px}
+.meta dt{color:var(--muted)}
+.meta dd{margin:0}
+.meta b{font-variant-numeric:tabular-nums}
+.note{font-size:13.5px;padding:10px 12px;border-radius:10px;background:var(--warn-bg);color:var(--warn)}
+.note.info{background:var(--accent-soft);color:var(--ink)}
+
+.f{display:flex;flex-direction:column;gap:5px}
+.f>label,.f>.lbl{font-size:13.5px;font-weight:700}
+.f .h{font-size:12.5px;color:var(--muted)}
+.f input[type=text],.f input[type=url],.f input[type=number],.f select,.f textarea{width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:8px 10px;min-width:0}
+.f textarea{min-height:70px;resize:vertical}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px}
+.chk input{width:18px;height:18px;accent-color:#1F3A5F}
+.iconpick{display:flex;gap:8px;align-items:center}
+.iconpick .sw{width:36px;height:36px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+.iconpick svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.list{display:flex;flex-direction:column;gap:10px}
+.item{border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+.item>summary{list-style:none;display:flex;align-items:center;gap:8px;padding:9px 10px;cursor:pointer;font-weight:700;font-size:14px}
+.item>summary::-webkit-details-marker{display:none}
+.item>summary .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item>summary .chev{transition:transform .2s;color:var(--muted)}
+.item[open]>summary .chev{transform:rotate(90deg)}
+.item .body{padding:4px 12px 12px;display:flex;flex-direction:column;gap:12px}
+.tools{display:flex;gap:4px}
+.tb{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:2px 7px;font-size:12.5px;cursor:pointer;line-height:1.5}
+.tb:hover{border-color:var(--accent)}
+.tb.del.arm{background:var(--danger);color:#fff;border-color:var(--danger)}
+.add{border:1.5px dashed var(--line);background:transparent;border-radius:10px;padding:9px;cursor:pointer;font-weight:700;color:var(--accent)}
+.add:hover{border-color:var(--accent);background:var(--accent-soft)}
+
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:8px 14px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--orange);border-color:var(--orange);color:var(--orange-ink)}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn.navy{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+.pv{position:sticky;top:12px}
+.pv-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:6px 12px;cursor:pointer;font-size:13.5px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.hgt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.hgt b{color:var(--ink)}
+.pv-bar .sp{flex:1}
+.stage{background:var(--stage);padding:18px;border-radius:0 0 12px 12px;overflow:hidden;position:relative}
+.site{background:#FAF8F5;margin:0 auto;box-shadow:0 2px 10px rgba(0,0,0,.12);border-radius:6px;overflow:hidden;transform-origin:top left;position:relative}
+.site iframe{display:block;border:0;width:100%}
+.site .ruler{position:absolute;left:0;right:0;height:0;border-top:2px dashed #F28C28;pointer-events:none}
+.site .ruler span{position:absolute;right:6px;top:-22px;font-size:11px;background:#F28C28;color:#1B2A3E;padding:1px 6px;border-radius:4px;font-family:var(--f)}
+.offscreen{position:absolute;left:-20000px;top:0;visibility:hidden}
+.codebox{width:100%;min-height:220px;font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);padding:10px;white-space:pre;overflow:auto}
+.toast{font-size:13px;color:var(--ok);font-weight:700}
+
+.guide{max-width:880px}
+.guide h2{font-size:22px;margin:28px 0 8px;color:var(--accent)}
+.guide h2:first-child{margin-top:0}
+.guide h3{font-size:17px;margin:18px 0 6px}
+.guide p,.guide li{max-width:68ch}
+.guide ol,.guide ul{padding-left:22px;margin:6px 0}
+.guide li{margin:3px 0}
+.guide .tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:8px 0}
+.guide table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+.guide th,.guide td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.guide th{background:var(--panel-2);font-size:13px}
+.guide tr:last-child td{border-bottom:0}
+.guide code{font-family:var(--mono);font-size:13px;background:var(--panel-2);padding:1px 5px;border-radius:4px;word-break:break-all}
+.pages{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:10px 0}
+.pg{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--panel-2)}
+.pg h3{margin:0 0 6px;font-size:16px}
+.pg ol{margin:0;padding-left:20px;font-size:14px}
+.pg .nat{color:var(--muted)}
+.pg .emb{font-weight:700}
+
+@media (max-width:1180px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .nav{position:static;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:4px}
+  .nav h2{display:none}
+  .nav button{width:auto;white-space:nowrap;background:var(--panel);border:1px solid var(--line)}
+}
+@media (max-width:860px){
+  .work{grid-template-columns:minmax(0,1fr)}
+  .pv{position:static}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top wrap">
+  <div class="mark"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5"/><path d="m9 14 2 2 4-4"/></svg></div>
+  <div>
+    <h1>家安工程行｜網站區塊編輯器</h1>
+    <div class="sub">改文字、增減項目，右邊立即預覽；完成後按「複製嵌入程式碼」貼到 Google 協作平台。</div>
+  </div>
+  <div class="status" id="status"><i></i><span>已自動儲存在這台電腦的瀏覽器</span></div>
+</header>
+
+<div class="app wrap">
+  <nav class="nav" id="nav" aria-label="區塊清單"></nav>
+  <main class="work" id="work">
+    <section class="pane" id="editorPane"></section>
+    <section class="pane pv" id="previewPane">
+      <div class="pv-bar">
+        <div class="seg" role="group" aria-label="預覽裝置">
+          <button type="button" id="devD" aria-pressed="true">桌機 1000px</button>
+          <button type="button" id="devM" aria-pressed="false">手機 360px</button>
+        </div>
+        <span class="hgt" id="hgt">測量中…</span>
+        <span class="sp"></span>
+        <button type="button" class="btn" id="showCode">查看程式碼</button>
+        <button type="button" class="btn primary" id="copyCode">複製嵌入程式碼</button>
+      </div>
+      <div class="stage" id="stage">
+        <div class="site" id="siteD"><iframe id="frD" title="桌機預覽"></iframe></div>
+        <div class="site" id="siteM" hidden><iframe id="frM" title="手機預覽"></iframe></div>
+      </div>
+      <div class="pane-b" id="codeWrap" hidden>
+        <div class="toast" id="toast" aria-live="polite"></div>
+        <textarea class="codebox" id="codeBox" readonly spellcheck="false" aria-label="嵌入程式碼"></textarea>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+'use strict';
+var SO='<scr'+'ipt>', SC='</scr'+'ipt>';
+
+/* ---------------- 圖示（線條風格，24×24） ---------------- */
+var ICONS={
+  water:['水電','<path d="M8 21a5 5 0 0 0 5-5c0-3-5-9-5-9s-5 6-5 9a5 5 0 0 0 5 5z"/><path d="M17.5 2 15 8h4l-2.5 6"/>'],
+  bolt:['電力','<path d="M13 2 4 14h8l-1 8 9-12h-8l1-8z"/>'],
+  plug:['插頭','<path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0z"/><path d="M12 17v5"/>'],
+  wifi:['網路弱電','<path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M2 9a15 15 0 0 1 20 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><path d="M12 20h.01"/>'],
+  cctv:['監視器','<rect x="2" y="5" width="14" height="8" rx="2"/><path d="m16 8 5-2v6l-5-2"/><path d="M7 13v4H3M7 17v3"/>'],
+  sofa:['室內裝潢','<path d="M20 9V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v2"/><path d="M2 11v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H6v-2a2 2 0 0 0-4 0z"/><path d="M5 18v2M19 18v2"/>'],
+  roller:['油漆','<rect x="3" y="3" width="14" height="6" rx="1.5"/><path d="M17 6h3a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-8v3"/><rect x="10" y="14" width="4" height="7" rx="1"/>'],
+  brick:['泥作','<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9.3h18M3 14.7h18M9 4v5.3M15 9.3v5.4M9 14.7V20"/>'],
+  cart:['商城','<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.6 12.2a2 2 0 0 0 2 1.6h8.6a2 2 0 0 0 2-1.5L22 7H6.2"/>'],
+  box:['商品','<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>'],
+  layers:['一條龍','<path d="m12 3 9 4.5-9 4.5-9-4.5z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16.5 9 4.5 9-4.5"/>'],
+  receipt:['報價單','<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/>'],
+  clock:['準時','<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'],
+  shield:['保固','<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>'],
+  chat:['諮詢','<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.4 9.4 0 0 1-3.6-.7L3 21l1.6-4.4A7.9 7.9 0 0 1 3 11.5C3 6.8 7 3 12 3s9 3.8 9 8.5z"/><path d="M8 11h.01M12 11h.01M16 11h.01"/>'],
+  search:['勘查','<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>'],
+  ruler:['丈量','<path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.4 2.4 0 0 1 0-3.4l2.6-2.6a2.4 2.4 0 0 1 3.4 0z"/><path d="m14.5 12.5 2-2M11.5 9.5l2-2M8.5 6.5l2-2M17.5 15.5l2-2"/>'],
+  wrench:['施工','<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>'],
+  check:['驗收','<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>'],
+  calendar:['年資','<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>'],
+  home:['住家','<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/>'],
+  thumb:['好評','<path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="m7 10 4-8a3 3 0 0 1 3 3v4h5.5a2 2 0 0 1 2 2.3l-1.4 8A2 2 0 0 1 18.1 21H7"/>'],
+  tag:['優惠','<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/>'],
+  bulb:['燈具','<path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>'],
+  phone:['電話','<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>'],
+  form:['表單','<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>'],
+  arrow:['箭頭','<path d="M5 12h14M13 6l6 6-6 6"/>'],
+  pin:['地點','<path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>']
+};
+function svg(k,cls){var i=ICONS[k]||ICONS.home;return '<svg class="'+(cls||'ic')+'" viewBox="0 0 24 24" aria-hidden="true">'+i[1]+'</svg>';}
+var ICON_OPTS=Object.keys(ICONS).map(function(k){return [k,ICONS[k][0]];});
+var STAR='<path d="M12 2.6l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.5l-5.9 3.1 1.2-6.5-4.8-4.6 6.6-.9z"/>';
+
+/* ---------------- 工具函式 ---------------- */
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function nl(s){return esc(s).replace(/\n/g,'<br>');}
+function fmtPhone(p){var d=String(p||'').replace(/\D/g,'');if(/^09\d{8}$/.test(d))return d.slice(0,4)+'-'+d.slice(4,7)+'-'+d.slice(7);if(/^0\d{8,9}$/.test(d))return d.slice(0,d.length-8)+'-'+d.slice(-8,-4)+'-'+d.slice(-4);return p||'';}
+function telHref(p){return 'tel:'+String(p||'').replace(/[^\d+]/g,'');}
+function splitList(s){return String(s||'').split(/[、,，\n]/).map(function(x){return x.trim();}).filter(Boolean);}
+function A(href,cls,inner,label){return '<a class="'+cls+'" href="'+esc(href||'#')+'" target="_blank" rel="noopener"'+(label?' aria-label="'+esc(label)+'"':'')+'>'+inner+'</a>';}
+function ph(w,h,bg,fg,icon,label,hint,k){k=k||1;
+  var s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+'"><rect width="'+w+'" height="'+h+'" fill="'+bg+'"/>'+
+  '<g transform="translate('+(w/2-48)+' '+(h/2-110)+') scale(4)" fill="none" stroke="'+fg+'" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">'+ICONS[icon][1]+'</g>'+
+  '<text x="'+(w/2)+'" y="'+(h/2+38)+'" text-anchor="middle" font-family="sans-serif" font-size="'+Math.round(w/26*k)+'" font-weight="700" fill="'+fg+'">'+label+'</text>'+
+  '<text x="'+(w/2)+'" y="'+(h/2+38+w/24*k)+'" text-anchor="middle" font-family="sans-serif" font-size="'+Math.round(w/40*k)+'" fill="'+fg+'">'+hint+'</text></svg>';
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s);
+}
+var BGS={transparent:'transparent',warm:'#FAF8F5',white:'#FFFFFF',navy:'#1F3A5F'};
+var BG_OPTS=[['transparent','透明（跟著協作平台背景）'],['warm','暖白 #FAF8F5'],['white','白色'],['navy','深藏青色帶']];
+var FONT='<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">';
+
+function base(s,bg){
+  var dk=bg==='navy';
+  return 'html,body{margin:0;padding:0;background:transparent}'+
+  '.'+s+'{--navy:#1F3A5F;--orange:#F28C28;--orange-t:#B45F12;--warm:#FAF8F5;--ink:#2B2B2B;--muted:#5B6470;--line:#E7E1D8;--soft:#EAF0F6;--btn-ink:#1B2A3E;--shadow:0 6px 20px rgba(31,58,95,.08),0 1px 3px rgba(31,58,95,.06);'+
+  'font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:var(--ink);background:'+BGS[bg]+';width:100%;margin:0;padding:'+(dk?'36px 28px':'22px 6px')+';'+(dk?'border-radius:12px;':'')+'line-height:1.65;font-size:17px;-webkit-font-smoothing:antialiased;box-sizing:border-box}'+
+  '.'+s+' *,.'+s+' *::before,.'+s+' *::after{box-sizing:border-box}'+
+  '.'+s+' h2,.'+s+' h3,.'+s+' p,.'+s+' ul,.'+s+' ol{margin:0}'+
+  '.'+s+' .hd{margin-bottom:22px;max-width:680px}'+
+  '.'+s+' .hd h2{font-size:30px;font-weight:700;color:'+(dk?'#fff':'var(--navy)')+';line-height:1.35;letter-spacing:.02em;text-wrap:balance}'+
+  '.'+s+' .hd p{margin-top:8px;color:'+(dk?'rgba(255,255,255,.8)':'var(--muted)')+';font-size:17px}'+
+  '.'+s+' .ic{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}'+
+  '.'+s+' a:focus-visible,.'+s+' button:focus-visible,.'+s+' summary:focus-visible,.'+s+' [tabindex]:focus-visible{outline:3px solid var(--orange);outline-offset:2px}'+
+  '.'+s+' .swipe{display:none;font-size:13px;color:'+(dk?'rgba(255,255,255,.7)':'var(--muted)')+';text-align:center;margin-top:4px}'+
+  '@media (max-width:600px){.'+s+'{padding:'+(dk?'26px 16px':'16px 4px')+';font-size:16px}.'+s+' .hd{margin-bottom:16px}.'+s+' .hd h2{font-size:24px}.'+s+' .hd p{font-size:16px}}'+
+  '@media (prefers-reduced-motion:reduce){.'+s+' *{transition:none!important;animation:none!important;scroll-behavior:auto!important}}';
+}
+function scroller(s,row,item){
+  return '@media (max-width:600px){.'+s+' '+row+'{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;padding:4px 4px 12px;margin:0 -4px;scrollbar-width:none}'+
+  '.'+s+' '+row+'::-webkit-scrollbar{display:none}.'+s+' '+row+'>'+item+'{flex:0 0 82%;scroll-snap-align:start}.'+s+' .swipe{display:block}}';
+}
+function head(d){
+  if(!d.title&&!d.sub)return '';
+  return '<div class="hd">'+(d.title?'<h2>'+esc(d.title)+'</h2>':'')+(d.sub?'<p>'+nl(d.sub)+'</p>':'')+'</div>';
+}
+function cols(n){return n<=5?n:(n%3===0?3:4);}
+
+/* ---------------- 各區塊產生器 ---------------- */
+var GEN={};
+
+GEN.stats=function(d){
+  var s='ja-stats',n=d.items.length||1;
+  var css=base(s,d.bg)+
+  '.'+s+' .panel{background:#fff;border-radius:12px;box-shadow:var(--shadow);display:grid;grid-template-columns:repeat('+n+',minmax(0,1fr))}'+
+  '.'+s+' .it{padding:26px 14px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;position:relative;min-width:0}'+
+  '.'+s+' .it+.it::before{content:"";position:absolute;left:0;top:22%;bottom:22%;width:1px;background:var(--line)}'+
+  '.'+s+' .ico{width:48px;height:48px;border-radius:50%;background:var(--soft);color:var(--navy);display:grid;place-items:center;margin-bottom:8px}'+
+  '.'+s+' .num{font-size:42px;font-weight:900;color:var(--navy);line-height:1.15;font-variant-numeric:tabular-nums;white-space:nowrap}'+
+  '.'+s+' .unit{font-size:18px;font-weight:700;color:var(--orange-t);margin-left:3px}'+
+  '.'+s+' .lb{font-size:17px;font-weight:700;margin-top:2px}'+
+  '.'+s+' .nt{font-size:14px;color:var(--muted)}'+
+  '@media (max-width:600px){.'+s+' .panel{grid-template-columns:repeat(2,minmax(0,1fr))}.'+s+' .it{padding:20px 8px}.'+s+' .it+.it::before{display:none}.'+s+' .it:nth-child(even){border-left:1px solid var(--line)}.'+s+' .it:nth-child(n+3){border-top:1px solid var(--line)}.'+s+' .num{font-size:34px}.'+s+' .ico{width:42px;height:42px}}';
+  var html=head(d)+'<div class="panel">'+d.items.map(function(it){
+    var num=Number(String(it.num).replace(/,/g,''))||0;
+    return '<div class="it"><span class="ico">'+svg(it.icon)+'</span><div><span class="num" data-to="'+num+'">'+num.toLocaleString('en-US')+'</span><span class="unit">'+esc(it.unit)+'</span></div><div class="lb">'+esc(it.label)+'</div>'+(it.note?'<div class="nt">'+esc(it.note)+'</div>':'')+'</div>';
+  }).join('')+'</div>';
+  var js='(function(){var r=document.currentScript.previousElementSibling;var els=r.querySelectorAll("[data-to]");'+
+  'if(!("IntersectionObserver" in window)||(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches))return;'+
+  'function f(n){return Math.round(n).toLocaleString("en-US")}'+
+  'function run(e){var to=+e.getAttribute("data-to"),t0=null,d=1600;function st(t){if(!t0)t0=t;var p=Math.min((t-t0)/d,1);p=1-Math.pow(1-p,3);e.textContent=f(to*p);if(p<1)requestAnimationFrame(st)}requestAnimationFrame(st)}'+
+  'var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){run(x.target);io.unobserve(x.target)}})},{threshold:.3});'+
+  'els.forEach(function(e){e.textContent="0";io.observe(e)})})();';
+  return [css,html,js];
+};
+
+GEN.services=function(d,b){
+  var s='ja-svc',n=d.items.length||1,c=cols(n);
+  var css=base(s,d.bg)+
+  '.'+s+' .row{display:grid;grid-template-columns:repeat(var(--c),minmax(0,1fr));gap:16px}'+
+  '.'+s+' .card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:22px 18px 20px;display:flex;flex-direction:column;gap:10px;min-width:0}'+
+  '.'+s+' .card.hl{border:1.5px solid var(--orange)}'+
+  '.'+s+' .tile{width:52px;height:52px;border-radius:12px;background:var(--soft);color:var(--navy);display:grid;place-items:center}'+
+  '.'+s+' .hl .tile{background:#FDEBD6;color:var(--orange-t)}'+
+  '.'+s+' h3{font-size:20px;color:var(--navy);line-height:1.35}'+
+  '.'+s+' .ds{font-size:15px;color:var(--muted);line-height:1.65}'+
+  '.'+s+' ul{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:6px}'+
+  '.'+s+' li{font-size:14px;line-height:1.5;padding:3px 10px;border-radius:999px;background:var(--warm);border:1px solid var(--line)}'+
+  '.'+s+' .lk{margin-top:auto;align-self:flex-start;font-weight:700;color:var(--navy);text-decoration:none;font-size:15px;display:inline-flex;align-items:center;gap:4px;padding-top:4px}'+
+  '.'+s+' .lk:hover{text-decoration:underline}'+
+  '.'+s+' .hl .lk{background:var(--orange);color:var(--btn-ink);padding:8px 16px;border-radius:12px;text-decoration:none}'+
+  '.'+s+' .hl .lk:hover{filter:brightness(1.05)}'+
+  '.'+s+' .lk svg{width:18px;height:18px}'+
+  '@media (max-width:860px){.'+s+' .row{--c:'+Math.min(c,3)+'}}'+
+  '@media (max-width:600px){.'+s+' .card{padding:18px 16px}}'+scroller(s,'.row','.card');
+  var html=head(d)+'<div class="row" style="--c:'+c+'">'+d.items.map(function(it){
+    var href=it.shopLink?b.shopUrl:it.link;
+    return '<article class="card'+(it.hl?' hl':'')+'"><span class="tile">'+svg(it.icon)+'</span><h3>'+esc(it.title)+'</h3><p class="ds">'+nl(it.desc)+'</p>'+
+    (splitList(it.items).length?'<ul>'+splitList(it.items).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>':'')+
+    (it.linkText?A(href,'lk',esc(it.linkText)+svg('arrow')):'')+'</article>';
+  }).join('')+'</div><p class="swipe">← 左右滑動看更多 →</p>';
+  return [css,html,''];
+};
+
+GEN.why=function(d){
+  var s='ja-why',n=d.items.length||1,dk=d.bg==='navy';
+  var css=base(s,d.bg)+
+  '.'+s+' .row{display:grid;grid-template-columns:repeat('+Math.min(n,4)+',minmax(0,1fr));gap:24px}'+
+  '.'+s+' .it{display:flex;flex-direction:column;gap:8px;min-width:0}'+
+  '.'+s+' .ico{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;'+(dk?'background:rgba(255,255,255,.08);color:#F7A65A;border:1.5px solid rgba(247,166,90,.55)':'background:#FDEBD6;color:var(--orange-t)')+';margin-bottom:4px}'+
+  '.'+s+' h3{font-size:20px;color:'+(dk?'#fff':'var(--navy)')+'}'+
+  '.'+s+' p.ds{font-size:15.5px;color:'+(dk?'rgba(255,255,255,.82)':'var(--muted)')+';line-height:1.7}'+
+  '@media (max-width:860px){.'+s+' .row{grid-template-columns:repeat(2,minmax(0,1fr))}}'+
+  '@media (max-width:600px){.'+s+' .row{gap:18px 14px}.'+s+' h3{font-size:18px}.'+s+' p.ds{font-size:14.5px}.'+s+' .ico{width:48px;height:48px}}';
+  var html=head(d)+'<div class="row">'+d.items.map(function(it){
+    return '<div class="it"><span class="ico">'+svg(it.icon)+'</span><h3>'+esc(it.title)+'</h3><p class="ds">'+nl(it.desc)+'</p></div>';
+  }).join('')+'</div>';
+  return [css,html,''];
+};
+
+GEN.process=function(d){
+  var s='ja-flow',n=d.items.length||1,dk=d.bg==='navy';
+  var lineCol=dk?'rgba(255,255,255,.5)':'rgba(31,58,95,.45)';
+  var css=base(s,d.bg)+
+  '.'+s+' ol{list-style:none;padding:0;display:grid;grid-template-columns:repeat('+n+',minmax(0,1fr));gap:12px}'+
+  '.'+s+' li{position:relative;text-align:center;min-width:0}'+
+  '.'+s+' .dot{width:60px;height:60px;border-radius:50%;background:#fff;border:2px solid var(--navy);color:var(--navy);display:grid;place-items:center;margin:0 auto 12px;position:relative;z-index:1}'+
+  '.'+s+' li:last-child .dot{border-color:var(--orange);background:#FDEBD6;color:var(--orange-t)}'+
+  '.'+s+' li:not(:last-child)::after{content:"";position:absolute;top:30px;left:calc(50% + 38px);right:calc(-50% + 26px);height:2px;background:repeating-linear-gradient(90deg,'+lineCol+' 0 6px,transparent 6px 11px)}'+
+  '.'+s+' .no{display:block;font-size:13px;font-weight:700;color:'+(dk?'#F7A65A':'var(--orange-t)')+';letter-spacing:.08em}'+
+  '.'+s+' h3{font-size:19px;color:'+(dk?'#fff':'var(--navy)')+';margin:2px 0 4px}'+
+  '.'+s+' p.ds{font-size:14.5px;color:'+(dk?'rgba(255,255,255,.82)':'var(--muted)')+';line-height:1.6;padding:0 4px}'+
+  '@media (max-width:760px){.'+s+' ol{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.'+s+' li{text-align:left;background:'+(dk?'rgba(255,255,255,.06)':'#fff')+';border:1px solid '+(dk?'rgba(255,255,255,.14)':'var(--line)')+';border-radius:12px;padding:12px;display:grid;grid-template-columns:40px 1fr;gap:4px 10px;align-items:center}'+
+  '.'+s+' li:not(:last-child)::after{display:none}.'+s+' .dot{width:40px;height:40px;margin:0;border-width:1.5px}.'+s+' .dot .ic{width:21px;height:21px}'+
+  '.'+s+' .tx{display:contents}.'+s+' .no{grid-column:2;grid-row:1;align-self:end;font-size:12px}.'+s+' h3{grid-column:2;grid-row:2;align-self:start;font-size:17px;margin:-4px 0 0}.'+s+' p.ds{grid-column:1/-1;padding:4px 0 0;font-size:14px;line-height:1.55}}'+
+  '@media (max-width:600px){.'+s+' ol{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.'+s+' li{padding:10px}}';
+  '.'+s+' .dot{width:52px;height:52px;margin:0}.'+s+' .dot .ic{width:24px;height:24px}'+
+  '.'+s+' li:not(:last-child)::after{top:56px;bottom:2px;left:25px;right:auto;width:2px;height:auto;background:repeating-linear-gradient(180deg,'+lineCol+' 0 5px,transparent 5px 9px)}'+
+  '.'+s+' h3{font-size:18px;margin:0 0 2px}.'+s+' p.ds{padding:0;font-size:14.5px}.'+s+' .tx{padding-top:2px}}';
+  var html=head(d)+'<ol>'+d.items.map(function(it,i){
+    return '<li><span class="dot">'+svg(it.icon)+'</span><div class="tx"><span class="no">第 '+(i+1)+' 步</span><h3>'+esc(it.title)+'</h3><p class="ds">'+nl(it.desc)+'</p></div></li>';
+  }).join('')+'</ol>';
+  return [css,html,''];
+};
+
+var PH_BEFORE=function(){return ph(1600,900,'#E9E2D8','#8C7B66','home','施工前照片','請在編輯器貼上照片網址');};
+var PH_AFTER=function(){return ph(1600,900,'#DCE6F0','#5C7593','check','施工後照片','請在編輯器貼上照片網址');};
+GEN.ba=function(d){
+  var s='ja-ba',items=d.items.length?d.items:[{}],dk=d.bg==='navy';
+  var data=items.map(function(it){return {b:it.before||PH_BEFORE(),a:it.after||PH_AFTER(),t:it.title||'',m:[it.area,it.type].filter(Boolean).join('・'),x:it.desc||''};});
+  var css=base(s,d.bg)+
+  '.'+s+' .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}'+
+  '.'+s+' .tabs button{font:inherit;font-size:15px;border:1px solid '+(dk?'rgba(255,255,255,.35)':'var(--line)')+';background:'+(dk?'transparent':'#fff')+';color:'+(dk?'#fff':'var(--navy)')+';padding:6px 14px;border-radius:999px;cursor:pointer}'+
+  '.'+s+' .tabs button[aria-selected="true"]{background:var(--orange);border-color:var(--orange);color:var(--btn-ink);font-weight:700}'+
+  '.'+s+' .stage{--p:50%;position:relative;aspect-ratio:16/9;max-width:100%;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);background:#ddd;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:ew-resize}'+
+  '.'+s+' .stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;-webkit-user-drag:none}'+
+  '.'+s+' .stage .bf{clip-path:inset(0 calc(100% - var(--p)) 0 0)}'+
+  '.'+s+' .bar{position:absolute;top:0;bottom:0;left:var(--p);width:3px;margin-left:-1.5px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.08)}'+
+  '.'+s+' .knob{position:absolute;top:50%;left:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:#fff;color:var(--navy);display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.25)}'+
+  '.'+s+' .knob svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}'+
+  '.'+s+' .lb{position:absolute;top:12px;padding:4px 12px;border-radius:999px;font-size:14px;font-weight:700;pointer-events:none}'+
+  '.'+s+' .lb.l{left:12px;background:rgba(43,43,43,.72);color:#fff}.'+s+' .lb.r{right:12px;background:var(--orange);color:var(--btn-ink)}'+
+  '.'+s+' .grid{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(0,1fr);gap:24px;align-items:center}'+
+  '.'+s+' .cap{display:flex;flex-direction:column;gap:6px}'+
+  '.'+s+' .cap h3{font-size:19px;color:'+(dk?'#fff':'var(--navy)')+'}'+
+  '.'+s+' .cap .m{font-size:14px;color:'+(dk?'#F7A65A':'var(--orange-t)')+';font-weight:700}'+
+  '.'+s+' .cap p{font-size:15.5px;line-height:1.75;color:'+(dk?'rgba(255,255,255,.82)':'var(--muted)')+'}'+
+  '.'+s+' .cap .tip{font-size:13px;color:'+(dk?'rgba(255,255,255,.7)':'var(--muted)')+';margin-top:4px}'+
+  '@media (max-width:760px){.'+s+' .grid{grid-template-columns:1fr;gap:12px}.'+s+' .cap{gap:2px}}'+
+  '@media (max-width:600px){.'+s+' .stage{aspect-ratio:4/3}.'+s+' .knob{width:40px;height:40px;margin:-20px 0 0 -20px}.'+s+' .lb{font-size:13px;top:8px}.'+s+' .lb.l{left:8px}.'+s+' .lb.r{right:8px}}';
+  var html=head(d)+
+  (data.length>1?'<div class="tabs" role="tablist">'+data.map(function(x,i){return '<button type="button" role="tab" aria-selected="'+(i===0)+'" data-i="'+i+'">'+esc(x.t||('案例 '+(i+1)))+'</button>';}).join('')+'</div>':'')+
+  '<div class="grid"><div class="stage" tabindex="0" role="slider" aria-label="拖曳比較施工前後" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">'+
+  '<img class="af" src="'+esc(data[0].a)+'" alt="施工後照片">'+
+  '<img class="bf" src="'+esc(data[0].b)+'" alt="施工前照片">'+
+  '<span class="lb l">施工前</span><span class="lb r">施工後</span>'+
+  '<span class="bar"><span class="knob"><svg viewBox="0 0 24 24"><path d="m9 6-6 6 6 6M15 6l6 6-6 6"/></svg></span></span></div>'+
+  '<div class="cap"><h3 class="t">'+esc(data[0].t)+'</h3><span class="m">'+esc(data[0].m)+'</span><p class="x">'+nl(data[0].x)+'</p><p class="tip">左右拖曳照片中間的圓形按鈕，就能比較施工前後。</p></div></div>';
+  var js='(function(){var r=document.currentScript.previousElementSibling,D='+JSON.stringify(data).replace(/</g,'\\u003c')+';'+
+  'var st=r.querySelector(".stage"),af=r.querySelector(".af"),bf=r.querySelector(".bf"),dn=false;'+
+  'function set(p){p=Math.max(0,Math.min(100,p));st.style.setProperty("--p",p+"%");st.setAttribute("aria-valuenow",Math.round(p))}'+
+  'function at(e){var b=st.getBoundingClientRect();set((e.clientX-b.left)/b.width*100)}'+
+  'st.addEventListener("pointerdown",function(e){dn=true;try{st.setPointerCapture(e.pointerId)}catch(_){}at(e)});'+
+  'st.addEventListener("pointermove",function(e){if(dn)at(e)});'+
+  '["pointerup","pointercancel"].forEach(function(t){st.addEventListener(t,function(){dn=false})});'+
+  'st.addEventListener("keydown",function(e){var v=+st.getAttribute("aria-valuenow");if(e.key==="ArrowLeft"){set(v-5);e.preventDefault()}if(e.key==="ArrowRight"){set(v+5);e.preventDefault()}});'+
+  'r.querySelectorAll(".tabs button").forEach(function(btn){btn.addEventListener("click",function(){var x=D[+btn.getAttribute("data-i")];'+
+  'r.querySelectorAll(".tabs button").forEach(function(o){o.setAttribute("aria-selected",o===btn)});af.src=x.a;bf.src=x.b;'+
+  'r.querySelector(".t").textContent=x.t;r.querySelector(".m").textContent=x.m;r.querySelector(".x").textContent=x.x;set(50)})})})();';
+  return [css,html,js];
+};
+
+GEN.reviews=function(d){
+  var s='ja-rev',dk=d.bg==='navy';
+  var css=base(s,d.bg)+
+  '.'+s+' .top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px}'+
+  '.'+s+' .top .hd{margin-bottom:0}'+
+  '.'+s+' .sum{display:flex;align-items:center;gap:8px;font-size:15px;color:'+(dk?'#fff':'var(--ink)')+';font-weight:700}'+
+  '.'+s+' .sum .stars{display:inline-flex}'+
+  '.'+s+' .track{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding:4px 4px 14px;margin:0 -4px;scrollbar-width:none}'+
+  '.'+s+' .track::-webkit-scrollbar{display:none}'+
+  '.'+s+' .card{flex:0 0 calc((100% - 32px)/3);scroll-snap-align:start;background:#fff;border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--line);padding:20px;display:flex;flex-direction:column;gap:10px;min-width:0}'+
+  '.'+s+' .stars svg{width:18px;height:18px}'+
+  '.'+s+' .q{font-size:16px;line-height:1.75;color:var(--ink);flex:1}'+
+  '.'+s+' .ft{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;border-top:1px solid var(--line);padding-top:12px}'+
+  '.'+s+' .nm{font-weight:700;color:var(--navy);margin-right:auto}'+
+  '.'+s+' .chip{font-size:13px;padding:2px 9px;border-radius:999px;background:var(--soft);color:var(--navy)}'+
+  '.'+s+' .chip.o{background:#FDEBD6;color:var(--orange-t)}'+
+  '.'+s+' .ctl{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:4px}'+
+  '.'+s+' .ctl button.ar{width:42px;height:42px;border-radius:50%;border:1px solid '+(dk?'rgba(255,255,255,.4)':'var(--line)')+';background:'+(dk?'transparent':'#fff')+';color:'+(dk?'#fff':'var(--navy)')+';display:grid;place-items:center;cursor:pointer;padding:0}'+
+  '.'+s+' .ctl button.ar svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}'+
+  '.'+s+' .dots{display:flex;gap:6px}'+
+  '.'+s+' .dots button{width:9px;height:9px;border-radius:50%;border:0;padding:0;background:'+(dk?'rgba(255,255,255,.35)':'#CFC8BD')+';cursor:pointer;transition:width .2s}'+
+  '.'+s+' .dots button[aria-current="true"]{width:24px;border-radius:5px;background:var(--orange)}'+
+  '@media (max-width:860px){.'+s+' .card{flex-basis:calc((100% - 16px)/2)}}'+
+  '@media (max-width:600px){.'+s+' .card{flex-basis:86%;padding:18px}.'+s+' .track{gap:12px}}';
+  function stars(n,sz){var h='';for(var i=0;i<5;i++)h+='<svg viewBox="0 0 24 24" style="fill:'+(i<n?'#F28C28':'#DDD6CB')+'"'+(sz?' width="'+sz+'" height="'+sz+'"':'')+'>'+STAR+'</svg>';return h;}
+  var html='<div class="top">'+head(d)+(d.summary?'<div class="sum"><span class="stars" aria-hidden="true">'+stars(5,18)+'</span>'+esc(d.summary)+'</div>':'')+'</div>'+
+  '<div class="track" tabindex="0" aria-label="客戶評價，可左右滑動">'+d.items.map(function(it){
+    var n=Math.max(1,Math.min(5,+it.stars||5));
+    return '<article class="card"><div class="stars" role="img" aria-label="'+n+' 顆星">'+stars(n)+'</div><p class="q">「'+nl(it.text)+'」</p><div class="ft"><span class="nm">'+esc(it.name)+'</span>'+(it.area?'<span class="chip">'+esc(it.area)+'</span>':'')+(it.type?'<span class="chip o">'+esc(it.type)+'</span>':'')+'</div></article>';
+  }).join('')+'</div>'+
+  '<div class="ctl"><button type="button" class="ar pv" aria-label="上一則"><svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button><div class="dots"></div><button type="button" class="ar nx" aria-label="下一則"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button></div>';
+  var js='(function(){var r=document.currentScript.previousElementSibling,tr=r.querySelector(".track"),cards=tr.children,dots=r.querySelector(".dots"),hold=false,T=null,AUTO='+(d.autoplay?Math.max(3,+d.interval||6)*1000:0)+';'+
+  'function step(){return cards.length>1?cards[1].offsetLeft-cards[0].offsetLeft:tr.clientWidth}'+
+  'function pages(){var per=Math.max(1,Math.round(tr.clientWidth/step()));return Math.max(1,cards.length-per+1)}'+
+  'function cur(){return Math.round(tr.scrollLeft/step())}'+
+  'function go(i){var n=pages();i=(i+n)%n;tr.scrollTo({left:i*step(),behavior:"smooth"})}'+
+  'function draw(){var n=pages(),c=Math.min(cur(),n-1);if(dots.children.length!==n){dots.innerHTML="";for(var i=0;i<n;i++){var b=document.createElement("button");b.type="button";b.setAttribute("aria-label","第 "+(i+1)+" 則");(function(k){b.onclick=function(){go(k)}})(i);dots.appendChild(b)}}'+
+  'for(var j=0;j<n;j++)dots.children[j].setAttribute("aria-current",j===c)}'+
+  'r.querySelector(".pv").onclick=function(){go(cur()-1)};r.querySelector(".nx").onclick=function(){go(cur()+1)};'+
+  'tr.addEventListener("scroll",function(){window.requestAnimationFrame(draw)});window.addEventListener("resize",draw);'+
+  '["pointerenter","focusin","touchstart"].forEach(function(t){r.addEventListener(t,function(){hold=true},{passive:true})});'+
+  '["pointerleave","focusout"].forEach(function(t){r.addEventListener(t,function(){hold=false})});'+
+  'var rm=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;'+
+  'if(AUTO&&!rm)T=setInterval(function(){if(!hold&&!document.hidden)go(cur()+1)},AUTO);draw()})();';
+  return [css,html,js];
+};
+
+GEN.products=function(d,b){
+  var s='ja-shop',n=d.items.length||1,c=n<=4?n:(n%3===0?3:4);
+  var css=base(s,d.bg)+
+  '.'+s+' .row{display:grid;grid-template-columns:repeat('+c+',minmax(0,1fr));gap:16px}'+
+  '.'+s+' .card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;min-width:0}'+
+  '.'+s+' .im{position:relative;aspect-ratio:4/3;background:var(--soft)}'+
+  '.'+s+' .im img{width:100%;height:100%;object-fit:cover;display:block}'+
+  '.'+s+' .tg{position:absolute;top:10px;left:10px;background:var(--orange);color:var(--btn-ink);font-size:13px;font-weight:700;padding:2px 10px;border-radius:999px}'+
+  '.'+s+' .bd{padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px;flex:1}'+
+  '.'+s+' h3{font-size:17px;color:var(--ink);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}'+
+  '.'+s+' .ds{font-size:14px;color:var(--muted);line-height:1.6}'+
+  '.'+s+' .pr{font-size:21px;font-weight:900;color:var(--navy);margin-top:auto;padding-top:4px;font-variant-numeric:tabular-nums}'+
+  '.'+s+' .pr small{font-size:13px;font-weight:500;color:var(--muted);margin-left:4px}'+
+  '.'+s+' .buy{display:flex;align-items:center;justify-content:center;gap:6px;background:var(--orange);color:var(--btn-ink);text-decoration:none;font-weight:700;font-size:16px;padding:10px;border-radius:12px;margin-top:6px}'+
+  '.'+s+' .buy:hover{filter:brightness(1.05)}.'+s+' .buy .ic{width:20px;height:20px}'+
+  '.'+s+' .more{display:flex;justify-content:center;margin-top:18px}'+
+  '.'+s+' .more a{display:inline-flex;align-items:center;gap:6px;border:1.5px solid '+(d.bg==='navy'?'#fff':'var(--navy)')+';color:'+(d.bg==='navy'?'#fff':'var(--navy)')+';text-decoration:none;font-weight:700;padding:10px 22px;border-radius:12px}'+
+  '.'+s+' .more a:hover{background:'+(d.bg==='navy'?'rgba(255,255,255,.1)':'var(--soft)')+'}'+
+  '@media (max-width:860px){.'+s+' .row{grid-template-columns:repeat('+Math.min(c,3)+',minmax(0,1fr))}}'+scroller(s,'.row','.card');
+  var html=head(d)+'<div class="row">'+d.items.map(function(it){
+    var img=it.img||ph(800,600,'#E6ECF3','#7D90A8',it.icon||'box','商品照片','請貼上照片網址',1.8);
+    return '<article class="card"><div class="im"><img src="'+esc(img)+'" alt="'+esc(it.name)+'" loading="lazy">'+(it.tag?'<span class="tg">'+esc(it.tag)+'</span>':'')+'</div>'+
+    '<div class="bd"><h3>'+esc(it.name)+'</h3>'+(it.desc?'<p class="ds">'+nl(it.desc)+'</p>':'')+'<div class="pr">'+esc(it.price)+(it.unit?'<small>'+esc(it.unit)+'</small>':'')+'</div>'+
+    A(it.url||b.shopUrl,'buy',svg('cart')+esc(d.btnText||'到賣場購買'))+'</div></article>';
+  }).join('')+'</div><p class="swipe">← 左右滑動看更多 →</p>'+
+  (d.moreText?'<div class="more">'+A(b.shopUrl,'',esc(d.moreText)+' →')+'</div>':'');
+  return [css,html,''];
+};
+
+GEN.faq=function(d,b){
+  var s='ja-faq',dk=d.bg==='navy';
+  var css=base(s,d.bg)+
+  '.'+s+' .ls{display:flex;flex-direction:column;gap:10px;max-width:880px}'+
+  '.'+s+' details{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 3px rgba(31,58,95,.05)}'+
+  '.'+s+' details[open]{box-shadow:var(--shadow);border-color:#D6DEE8}'+
+  '.'+s+' summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:16px 18px;font-size:17px;font-weight:700;color:var(--navy);line-height:1.5}'+
+  '.'+s+' summary::-webkit-details-marker{display:none}'+
+  '.'+s+' .qq{flex:none;width:28px;height:28px;border-radius:50%;background:var(--soft);color:var(--navy);display:grid;place-items:center;font-size:14px;font-weight:900}'+
+  '.'+s+' .tx{flex:1}'+
+  '.'+s+' .pm{flex:none;width:22px;height:22px;position:relative}'+
+  '.'+s+' .pm::before,.'+s+' .pm::after{content:"";position:absolute;left:4px;right:4px;top:10px;height:2px;background:var(--orange-t);border-radius:2px;transition:transform .25s}'+
+  '.'+s+' .pm::after{transform:rotate(90deg)}'+
+  '.'+s+' details[open] .pm::after{transform:rotate(0)}'+
+  '.'+s+' .an{padding:0 18px 18px 58px;font-size:16px;color:#454B53;line-height:1.8}'+
+  '.'+s+' .ask{margin-top:16px;font-size:15px;color:'+(dk?'rgba(255,255,255,.85)':'var(--muted)')+'}'+
+  '.'+s+' .ask a{color:'+(dk?'#F7A65A':'var(--navy)')+';font-weight:700}'+
+  '@media (max-width:600px){.'+s+' summary{padding:14px;font-size:16px;gap:10px}.'+s+' .qq{width:26px;height:26px}.'+s+' .an{padding:0 14px 16px 50px;font-size:15.5px}}';
+  var html=head(d)+'<div class="ls">'+d.items.map(function(it,i){
+    return '<details'+(i===0&&d.openFirst?' open':'')+'><summary><span class="qq" aria-hidden="true">Q</span><span class="tx">'+esc(it.q)+'</span><span class="pm" aria-hidden="true"></span></summary><div class="an">'+nl(it.a)+'</div></details>';
+  }).join('')+'</div>'+
+  (b.phone?'<p class="ask">'+esc(d.askText||'沒找到答案？直接打給我們：')+'<a href="'+telHref(b.phone)+'" target="_blank" rel="noopener">'+esc(fmtPhone(b.phone))+'</a></p>':'');
+  var js=d.single?'(function(){var r=document.currentScript.previousElementSibling,ds=r.querySelectorAll("details");ds.forEach(function(x){x.addEventListener("toggle",function(){if(x.open)ds.forEach(function(o){if(o!==x)o.open=false})})})})();':'';
+  return [css,html,js];
+};
+
+GEN.contact=function(d,b){
+  var s='ja-cta',dk=d.bg==='navy';
+  var info=[];
+  if(b.years)info.push('在地經驗 '+String(b.years).replace(/年$/,'')+' 年');
+  if(b.areas)info.push('服務區域：'+b.areas);
+  if(b.hours)info.push('營業時間：'+b.hours);
+  var btns=[];
+  if(b.phone)btns.push('<a class="bt call" href="'+telHref(b.phone)+'" target="_blank" rel="noopener">'+svg('phone')+'<span><b>'+esc(d.callText||'撥打電話')+'</b><em>'+esc(fmtPhone(b.phone))+'</em></span></a>');
+  if(b.lineUrl)btns.push(A(b.lineUrl,'bt line',svg('chat')+'<span><b>'+esc(d.lineText||'LINE 加好友')+'</b><em>'+esc(b.lineId||'傳照片問最快')+'</em></span>'));
+  btns.push(A(b.formUrl,'bt form',svg('form')+'<span><b>'+esc(d.formText||'免費估價')+'</b><em>'+esc(d.formSub||'線上填表，我們回電')+'</em></span>'));
+  var css=base(s,d.bg)+
+  '.'+s+' .in{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px 32px;align-items:center}'+
+  '.'+s+' .hd{margin-bottom:0}'+
+  '.'+s+' .info{margin-top:10px;display:flex;flex-wrap:wrap;gap:4px 18px;font-size:15px;color:'+(dk?'rgba(255,255,255,.85)':'var(--muted)')+'}'+
+  '.'+s+' .bts{display:grid;grid-template-columns:repeat('+btns.length+',minmax(0,1fr));gap:12px}'+
+  '.'+s+' .bt{display:flex;align-items:center;gap:10px;text-decoration:none;border-radius:12px;padding:12px 18px;min-height:66px;min-width:0;transition:transform .15s,filter .15s}'+
+  '.'+s+' .bt:hover{transform:translateY(-1px);filter:brightness(1.04)}'+
+  '.'+s+' .bt .ic{width:26px;height:26px}'+
+  '.'+s+' .bt span{display:flex;flex-direction:column;line-height:1.3;min-width:0}'+
+  '.'+s+' .bt b{font-size:18px;white-space:nowrap}'+
+  '.'+s+' .bt em{font-style:normal;font-size:13.5px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'+
+  '.'+s+' .call{background:var(--orange);color:var(--btn-ink)}'+
+  '.'+s+' .call em{font-size:16px;font-weight:700;opacity:1;font-variant-numeric:tabular-nums}'+
+  '.'+s+' .line{background:#06C755;color:#fff}'+
+  '.'+s+' .form{background:'+(dk?'#fff':'var(--navy)')+';color:'+(dk?'var(--navy)':'#fff')+'}'+
+  '@media (max-width:900px){.'+s+' .in{grid-template-columns:1fr}}'+
+  '@media (max-width:600px){.'+s+' .bts{grid-template-columns:1fr;gap:10px}.'+s+' .bt{min-height:60px}}';
+  var html='<div class="in"><div>'+head(d)+(info.length?'<div class="info">'+info.map(function(x){return '<span>'+esc(x)+'</span>';}).join('')+'</div>':'')+'</div>'+
+  '<div class="bts">'+btns.join('')+'</div></div>';
+  return [css,html,''];
+};
+
+GEN.promo=function(d,b){
+  var s='ja-promo';
+  var css=base(s,d.bg)+
+  '.'+s+' .box{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:22px 24px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:18px;align-items:center}'+
+  '.'+s+' .ico{width:60px;height:60px;border-radius:12px;background:#FDEBD6;color:var(--orange-t);display:grid;place-items:center}'+
+  '.'+s+' .ico .ic{width:32px;height:32px}'+
+  '.'+s+' .tg{display:inline-block;font-size:13px;font-weight:700;color:var(--orange-t);letter-spacing:.06em;margin-bottom:2px}'+
+  '.'+s+' h3{font-size:22px;color:var(--navy);line-height:1.4;text-wrap:balance}'+
+  '.'+s+' p{font-size:15.5px;color:var(--muted);margin-top:4px}'+
+  '.'+s+' .go{display:inline-flex;align-items:center;gap:6px;background:var(--orange);color:var(--btn-ink);font-weight:700;font-size:17px;text-decoration:none;padding:12px 22px;border-radius:12px;white-space:nowrap}'+
+  '.'+s+' .go:hover{filter:brightness(1.05)}'+
+  '@media (max-width:700px){.'+s+' .box{grid-template-columns:auto minmax(0,1fr);padding:18px}.'+s+' .go{grid-column:1/-1;justify-content:center}.'+s+' .ico{width:48px;height:48px}.'+s+' h3{font-size:19px}}';
+  var html='<div class="box"><span class="ico">'+svg(d.icon)+'</span><div>'+(d.tag?'<span class="tg">'+esc(d.tag)+'</span>':'')+'<h3>'+esc(d.title)+'</h3>'+(d.text?'<p>'+nl(d.text)+'</p>':'')+'</div>'+
+  (d.btnText?A(d.url||b.formUrl,'go',esc(d.btnText)+' →'):'')+'</div>';
+  return [css,html,''];
+};
+
+/* ---------------- 區塊定義（說明、欄位） ---------------- */
+var bgField={k:'bg',t:'select',l:'區塊背景',o:BG_OPTS};
+var hdFields=[{k:'title',t:'text',l:'區塊標題'},{k:'sub',t:'textarea',l:'副標題（可留空）'}];
+var BLOCKS=[
+ {id:'stats',name:'信任數字列',use:'用數字讓客人一眼看到經驗與口碑，進入畫面時數字會由 0 滾動到目標值。',place:'首頁頁首大圖下方第一個區塊；聯絡我們頁也可放。',
+  fields:[bgField].concat(hdFields,[{k:'items',t:'list',l:'數字項目',name:'數字',lab:function(x){return (x.label||'數字')+'：'+x.num+(x.unit||'');},
+   add:{icon:'thumb',num:100,unit:'+',label:'新項目',note:''},
+   f:[{k:'icon',t:'icon',l:'圖示'},{row:[{k:'num',t:'number',l:'數字'},{k:'unit',t:'text',l:'單位／符號',h:'例如：年、件+、則'}]},{k:'label',t:'text',l:'名稱'},{k:'note',t:'text',l:'小字說明（可留空）'}]}]),
+  warn:'目前是範例數字，請改成實際的年資、件數與保固年限。'},
+ {id:'services',name:'服務項目卡片',use:'介紹五大服務，每張卡片有圖示、簡介與常見項目；手機版改為左右滑動，高度不會暴增。',place:'首頁信任數字下方；「服務項目」頁最上方。',
+  fields:[bgField].concat(hdFields,[{k:'items',t:'list',l:'服務卡片',name:'服務',lab:function(x){return x.title;},
+   add:{icon:'wrench',title:'新服務',desc:'服務簡介',items:'項目一、項目二',linkText:'',link:'',shopLink:false,hl:false},
+   f:[{k:'icon',t:'icon',l:'圖示'},{k:'title',t:'text',l:'服務名稱'},{k:'desc',t:'textarea',l:'簡介'},{k:'items',t:'textarea',l:'常見項目',h:'用「、」隔開，每個會變成一個小標籤'},
+    {row:[{k:'linkText',t:'text',l:'按鈕文字（可留空）'},{k:'link',t:'url',l:'按鈕網址'}]},{k:'shopLink',t:'check',l:'按鈕改連到「品牌資訊」裡的線上商城網址'},{k:'hl',t:'check',l:'用橘色框特別標示'}]}])},
+ {id:'why',name:'為什麼選擇我們',use:'說明四個讓客人放心的理由，預設為深藏青色帶，和其他白底區塊做出段落感。',place:'首頁服務項目下方。',
+  fields:[bgField].concat(hdFields,[{k:'items',t:'list',l:'理由',name:'理由',lab:function(x){return x.title;},add:{icon:'shield',title:'新理由',desc:'說明文字'},
+   f:[{k:'icon',t:'icon',l:'圖示'},{k:'title',t:'text',l:'標題'},{k:'desc',t:'textarea',l:'說明'}]}])},
+ {id:'process',name:'施工流程時間軸',use:'讓客人知道從聯絡到保固每一步會發生什麼事，減少不安。桌機橫向、手機直向。',place:'「服務項目」頁服務卡片下方；首頁也可放在評價前。',
+  fields:[bgField].concat(hdFields,[{k:'items',t:'list',l:'步驟',name:'步驟',lab:function(x,i){return '第 '+(i+1)+' 步：'+x.title;},add:{icon:'check',title:'新步驟',desc:'說明'},
+   f:[{k:'icon',t:'icon',l:'圖示'},{k:'title',t:'text',l:'步驟名稱'},{k:'desc',t:'textarea',l:'說明'}]}]),
+  tip:'步驟建議 4–6 個，桌機版一排顯示最好看。'},
+ {id:'ba',name:'施工前後對比滑桿',use:'拖曳中間的圓形按鈕比較施工前後照片；可放多組案例，用上方按鈕切換。',place:'「施工實績」頁最上方；首頁可放一組精選案例。',
+  fields:[bgField].concat(hdFields,[{k:'items',t:'list',l:'案例',name:'案例',lab:function(x){return x.title||'案例';},add:{title:'新案例',area:'',type:'',desc:'',before:'',after:''},
+   f:[{k:'title',t:'text',l:'案例名稱'},{row:[{k:'area',t:'text',l:'地區'},{k:'type',t:'text',l:'工程類型'}]},{k:'desc',t:'textarea',l:'簡短說明'},
+    {k:'before',t:'url',l:'施工前照片網址',h:'【替換處】留空會顯示灰色佔位圖'},{k:'after',t:'url',l:'施工後照片網址',h:'【替換處】前後照片請用同一角度拍攝'}]}]),
+  tip:'照片網址取得方式見「網站規劃指南 → 照片網址」。外部照片在本預覽可能不會顯示，貼到協作平台後即可正常顯示。'},
+ {id:'reviews',name:'客戶評價輪播',use:'顯示客戶真實評價，含星等、地區、工程類型；會自動輪播，滑鼠移上去或手指觸碰時暫停。',place:'首頁「為什麼選擇我們」或對比滑桿下方；「施工實績」頁也可放。',
+  fields:[bgField].concat(hdFields,[{k:'summary',t:'text',l:'總評文字（可留空）',h:'例如：Google 評價 4.9 顆星'},{row:[{k:'autoplay',t:'check',l:'自動輪播'},{k:'interval',t:'number',l:'每幾秒換一次'}]},
+   {k:'items',t:'list',l:'評價',name:'評價',lab:function(x){return (x.name||'')+'｜'+(x.type||'');},add:{name:'○先生',area:'高雄市',type:'水電',stars:5,text:'評價內容'},
+   f:[{row:[{k:'name',t:'text',l:'稱呼',h:'例如：陳小姐'},{k:'stars',t:'select',l:'星等',o:[['5','★★★★★ 5'],['4','★★★★ 4'],['3','★★★ 3']]}]},{row:[{k:'area',t:'text',l:'地區'},{k:'type',t:'text',l:'工程類型'}]},{k:'text',t:'textarea',l:'評價內容'}]}]),
+  warn:'目前是示意用的範例評價。上線前請換成真實客戶的評價（可徵得同意後引用 Google 商家評論），不要放虛構評價。'},
+ {id:'products',name:'精選商品',use:'展示 3–6 項推薦商品，按鈕直接連到蝦皮／露天賣場。手機版左右滑動。',tip:'放 4 項時桌機排成一排最省高度；放 5–6 項會變成兩排，嵌入框要拉高。',place:'「線上商城」頁最上方；首頁服務卡片後也可放 3 項。',
+  fields:[bgField].concat(hdFields,[{row:[{k:'btnText',t:'text',l:'購買按鈕文字'},{k:'moreText',t:'text',l:'底部「看更多」按鈕（可留空）'}]},
+   {k:'items',t:'list',l:'商品',name:'商品',lab:function(x){return x.name;},add:{name:'新商品',tag:'',desc:'',price:'NT$ 0',unit:'',img:'',url:'',icon:'box'},
+   f:[{k:'name',t:'text',l:'商品名稱'},{row:[{k:'price',t:'text',l:'價格'},{k:'unit',t:'text',l:'單位（可留空）'}]},{row:[{k:'tag',t:'text',l:'角標（可留空）',h:'例如：熱銷'},{k:'icon',t:'icon',l:'佔位圖示'}]},{k:'desc',t:'textarea',l:'一句話介紹'},
+    {k:'img',t:'url',l:'商品照片網址',h:'【替換處】留空會顯示佔位圖'},{k:'url',t:'url',l:'商品頁網址',h:'留空就連到品牌資訊裡的商城網址'}]}]),
+  warn:'商品與價格為範例，請換成賣場實際商品。'},
+ {id:'faq',name:'常見問題手風琴',use:'把客人最常問的問題整理好，點一下展開答案。',place:'「服務項目」頁流程下方；「聯絡我們」頁表單下方。',
+  fields:[bgField].concat(hdFields,[{row:[{k:'openFirst',t:'check',l:'預設展開第一題'},{k:'single',t:'check',l:'一次只展開一題'}]},{k:'askText',t:'text',l:'底部提示文字',h:'後面會自動接上電話號碼'},
+   {k:'items',t:'list',l:'問答',name:'問答',lab:function(x){return x.q;},add:{q:'新問題？',a:'回答內容'},
+   f:[{k:'q',t:'text',l:'問題'},{k:'a',t:'textarea',l:'回答'}]}]),
+  tip:'嵌入高度以「展開一題」計算。若答案很長，請把嵌入框再拉高約 80–120px，避免展開後出現捲軸。'},
+ {id:'contact',name:'聯絡按鈕列',use:'三個大按鈕：撥打電話、LINE 加好友、免費估價（連到 Google 表單），長輩也好按。',place:'每一頁的最下方；首頁可在中段再放一次。',
+  fields:[bgField].concat(hdFields,[{row:[{k:'callText',t:'text',l:'電話按鈕文字'},{k:'lineText',t:'text',l:'LINE 按鈕文字'}]},{row:[{k:'formText',t:'text',l:'估價按鈕文字'},{k:'formSub',t:'text',l:'估價按鈕小字'}]}]),
+  tip:'電話、LINE、表單網址、服務區域、營業時間請到「品牌資訊」修改。LINE 網址未填時，LINE 按鈕不會顯示。'},
+ {id:'promo',name:'公告／優惠橫幅',use:'額外的自訂區塊：放本月優惠、颱風季檢修、休假公告等，可隨時改內容。',place:'首頁信任數字上方或下方；需要時才放。',
+  fields:[bgField,{k:'icon',t:'icon',l:'圖示'},{k:'tag',t:'text',l:'小標'},{k:'title',t:'text',l:'標題'},{k:'text',t:'textarea',l:'內容'},{row:[{k:'btnText',t:'text',l:'按鈕文字（可留空）'},{k:'url',t:'url',l:'按鈕網址',h:'留空就連到估價表單'}]}],
+  warn:'這是範例活動內容，請依實際提供的服務修改。'}
+];
+var BRAND_FIELDS=[
+ {k:'name',t:'text',l:'店名'},{k:'slogan',t:'text',l:'品牌標語'},{k:'areas',t:'text',l:'服務區域'},
+ {row:[{k:'phone',t:'text',l:'電話'},{k:'years',t:'text',l:'經驗年數',h:'例如：15，會顯示在聯絡按鈕列'}]},
+ {k:'hours',t:'text',l:'營業時間',h:'例如：週一至週六 08:00–18:00'},
+ {row:[{k:'lineId',t:'text',l:'LINE ID',h:'例如：@jiaan'},{k:'lineUrl',t:'url',l:'LINE 加好友網址',h:'官方帳號：https://line.me/R/ti/p/@你的ID'}]},
+ {k:'shopUrl',t:'url',l:'線上商城網址（蝦皮／露天）'},
+ {k:'formUrl',t:'url',l:'Google 估價表單網址',h:'在 Google 表單按「傳送」→ 連結圖示 → 複製'}
+];
+var MISSING=[['lineUrl','LINE 加好友網址'],['hours','營業時間'],['years','經驗年數'],['shopUrl','線上商城網址'],['formUrl','Google 估價表單網址']];
+
+/* ---------------- 預設內容 ---------------- */
+function defaults(){return {
+ brand:{name:'家安工程行',slogan:'讓家安心・施工安全・價格透明・售後有保障',areas:'高雄、台南、屏東',phone:'0936665982',years:'',hours:'',lineId:'',lineUrl:'',shopUrl:'',formUrl:''},
+ blocks:{
+  stats:{bg:'transparent',title:'',sub:'',items:[
+   {icon:'calendar',num:15,unit:'年',label:'施工年資',note:'在地老師傅'},
+   {icon:'home',num:1200,unit:'件+',label:'完工件數',note:'高雄・台南・屏東'},
+   {icon:'thumb',num:350,unit:'則+',label:'客戶好評',note:'回頭客與介紹居多'},
+   {icon:'shield',num:1,unit:'年',label:'完工保固',note:'有問題回來處理'}]},
+  services:{bg:'transparent',title:'我們的服務',sub:'大小工程都接，一通電話幫您找出問題、說清楚怎麼修。',items:[
+   {icon:'water',title:'水電工程',desc:'漏水、跳電、管線老舊，師傅到府檢查，先找出原因再處理。',items:'漏水檢測、管線更新、配電箱更換、插座開關增設、熱水器安裝',linkText:'',link:'',shopLink:false,hl:false},
+   {icon:'wifi',title:'弱電工程',desc:'網路、監視器、對講機一次處理好，線路整齊，日後好維護。',items:'網路佈線、監視器安裝、對講機門禁、Wi-Fi 訊號改善',linkText:'',link:'',shopLink:false,hl:false},
+   {icon:'sofa',title:'室內裝潢',desc:'從規劃到完工一手包辦，依預算給建議，不亂追加。',items:'天花板、木作櫃、油漆粉刷、地板、隔間',linkText:'',link:'',shopLink:false,hl:false},
+   {icon:'brick',title:'泥作工程',desc:'浴室、廚房翻新與防水，打底做確實，住得久更安心。',items:'浴室翻修、磁磚鋪貼、防水工程、壁癌處理',linkText:'',link:'',shopLink:false,hl:false},
+   {icon:'cart',title:'線上商城',desc:'師傅自己在用、真心推薦的五金與衛浴用品，網路下單送到家。',items:'五金工具、LED 燈具、衛浴配件',linkText:'前往賣場',link:'',shopLink:true,hl:true}]},
+  why:{bg:'navy',title:'為什麼選擇家安？',sub:'我們把每個家都當成自己家在做。',items:[
+   {icon:'layers',title:'一條龍統包',desc:'水電、泥作、木作、油漆一次包辦，不用自己找好幾組師傅，溝通一次就好。'},
+   {icon:'receipt',title:'透明報價',desc:'到府看過再報價，材料、工錢一項一項寫清楚，說好的價格不會再追加。'},
+   {icon:'clock',title:'準時完工',desc:'開工前排好工期，施工中隨時回報進度，完工清潔乾淨再交屋。'},
+   {icon:'shield',title:'保固售後',desc:'完工提供保固，有問題打一通電話，師傅回來處理。'}]},
+  process:{bg:'transparent',title:'施工流程',sub:'每一步都先跟您說清楚，確認了才動工。',items:[
+   {icon:'chat',title:'諮詢',desc:'打電話或 LINE 說明需求，拍照傳來更快。'},
+   {icon:'search',title:'勘查',desc:'約好時間到府查看、丈量，找出問題原因。'},
+   {icon:'receipt',title:'報價',desc:'提供明細報價單，材料、工資清楚列出。'},
+   {icon:'wrench',title:'施工',desc:'依約定時間施工，做好保護與安全措施。'},
+   {icon:'check',title:'驗收',desc:'完工後陪您逐項檢查，確認沒問題才算完成。'},
+   {icon:'shield',title:'保固',desc:'提供保固與售後，有狀況隨時找我們。'}]},
+  ba:{bg:'transparent',title:'施工前後對比',sub:'同一個角度拍攝，差別一看就知道。',items:[
+   {title:'老浴室翻新',area:'高雄市鳳山區',type:'泥作・水電',desc:'拆除舊磁磚、重做防水與管線，換上止滑地磚與省水龍頭。',before:'',after:''},
+   {title:'壁癌處理',area:'台南市永康區',type:'泥作',desc:'刮除壁癌、做好防水層再批土油漆，牆面恢復乾淨。',before:'',after:''}]},
+  reviews:{bg:'transparent',title:'客戶怎麼說',sub:'',summary:'平均 4.9 顆星',autoplay:true,interval:6,items:[
+   {name:'陳小姐',area:'高雄市三民區',type:'水電',stars:5,text:'浴室漏水找了好幾家都沒修好，師傅來一次就找到原因，報價跟最後收的一樣，很實在。'},
+   {name:'林先生',area:'台南市永康區',type:'室內裝潢',stars:5,text:'老房子整間翻新，水電到油漆都是同一組人負責，不用自己協調，工期也很準時。'},
+   {name:'王媽媽',area:'屏東縣屏東市',type:'泥作',stars:5,text:'壁癌處理得很乾淨，師傅很有耐心，跟我們老人家解說得很清楚。'},
+   {name:'黃先生',area:'高雄市鳳山區',type:'弱電',stars:5,text:'店面的監視器和網路線重新拉，線路整理得很整齊，用手機就能看畫面。'},
+   {name:'張小姐',area:'台南市東區',type:'水電',stars:5,text:'晚上突然跳電，隔天一早就來處理，換了新的配電箱，住起來安心很多。'}]},
+  products:{bg:'transparent',title:'師傅推薦好物',sub:'自己施工也在用的商品，品質有把關。',btnText:'到賣場購買',moreText:'看更多商品',items:[
+   {name:'LED 平板吸頂燈 36W',tag:'師傅推薦',desc:'薄型好安裝，亮度均勻不刺眼。',price:'NT$ 890',unit:'',img:'',url:'',icon:'bulb'},
+   {name:'省水節能水龍頭',tag:'熱銷',desc:'有省水標章，出水穩定。',price:'NT$ 1,280',unit:'',img:'',url:'',icon:'water'},
+   {name:'漏電斷路器 2P 20A',tag:'',desc:'浴室、廚房必備，用電更安全。',price:'NT$ 650',unit:'',img:'',url:'',icon:'bolt'},
+   {name:'防霉矽利康',tag:'',desc:'浴室填縫專用，防水防霉。',price:'NT$ 180',unit:'/ 支',img:'',url:'',icon:'box'}]},
+  faq:{bg:'transparent',title:'常見問題',sub:'',openFirst:true,single:true,askText:'沒找到答案？直接打給我們：',items:[
+   {q:'到府估價要收費嗎？',a:'高雄、台南、屏東地區到府估價免費。若需要拆開檢查（例如抓漏），會先說明費用，您同意後才進行。'},
+   {q:'報價之後會不會再追加費用？',a:'報價單會把材料、工資列清楚。施工中如果發現原本看不到的問題，一定先拍照跟您說明，經過您同意才會調整，不會自己加價。'},
+   {q:'施工大概要多久？',a:'小型維修多半當天完成；浴室翻修約 7–14 天；整間裝修依坪數與項目而定，報價時會一起提供工期表。'},
+   {q:'完工後有保固嗎？',a:'有。完工後提供保固，保固期間內因施工造成的問題免費處理，保固內容會寫在報價單上。'},
+   {q:'只換一個水龍頭也可以叫你們嗎？',a:'可以！小工程我們一樣認真做，歡迎直接來電或 LINE 詢問。'},
+   {q:'可以怎麼付款？',a:'小型工程完工後付款；較大的工程依合約分期（訂金、進度款、尾款），可以付現或轉帳。'}]},
+  contact:{bg:'navy',title:'有任何問題，現在就聯絡家安',sub:'到府估價免費，報價清楚不加價。',callText:'撥打電話',lineText:'LINE 加好友',formText:'免費估價',formSub:'線上填表，我們回電'},
+  promo:{bg:'transparent',icon:'tag',tag:'本月服務',title:'老屋水電健檢，到府免費檢查',text:'屋齡 20 年以上的住家，幫您檢查配電箱、漏電與管線狀況，有問題再說明，不強迫施工。',btnText:'我要預約',url:''}
+ }};}
+
+/* ---------------- 狀態與儲存 ---------------- */
+var KEY='jiaan-blocks-v1';
+var state=defaults();
+function merge(def,v){if(Array.isArray(def))return Array.isArray(v)?v:def;if(def&&typeof def==='object'){var o={};Object.keys(def).forEach(function(k){o[k]=(v&&k in v)?merge(def[k],v[k]):def[k];});return o;}return v===undefined?def:v;}
+try{var raw=localStorage.getItem(KEY);if(raw)state=merge(defaults(),JSON.parse(raw));}catch(e){}
+var stEl=document.getElementById('status');
+var saveT=null;
+function save(){clearTimeout(saveT);saveT=setTimeout(function(){try{localStorage.setItem(KEY,JSON.stringify(state));stEl.innerHTML='<i></i><span>已自動儲存在這台電腦的瀏覽器</span>';}catch(e){stEl.innerHTML='<i style="background:var(--orange)"></i><span>瀏覽器無法自動儲存，請用「備份與還原」保存</span>';}},400);}
+
+/* ---------------- 產生完整嵌入碼 ---------------- */
+var measures={};
+function blockDef(id){for(var i=0;i<BLOCKS.length;i++)if(BLOCKS[i].id===id)return BLOCKS[i];}
+function rec(h){return h?Math.ceil((h+16)/10)*10:0;}
+function buildCode(id,withComment){
+  var def=blockDef(id),parts=GEN[id](state.blocks[id],state.brand),m=measures[id]||{};
+  var c='';
+  if(withComment){
+    c+='<!--\n  '+state.brand.name+'｜'+def.name+'\n  用途：'+def.use+'\n  放置位置：'+def.place+'\n'+
+    '  建議嵌入高度：桌機約 '+(rec(m.d)||'—')+'px／手機約 '+(rec(m.m)||'—')+'px\n'+
+    '  貼法：協作平台 → 插入 → 嵌入 → 嵌入程式碼 → 貼上 → 插入，再拖曳框線調整高度\n-->\n';
+  }
+  c+=FONT+'\n<style>'+parts[0]+'</style>\n<section class="'+parts[0].match(/\.(ja-[a-z]+)\{/)[1]+(state.blocks[id].bg==='navy'?' dk':'')+'">'+parts[1]+'</section>'+(parts[2]?'\n'+SO+parts[2]+SC:'')+'\n';
+  return c;
+}
+window.JIAAN={buildCode:buildCode,blocks:BLOCKS.map(function(b){return b.id;}),measures:measures,state:function(){return state;}};
+
+/* ---------------- 介面 ---------------- */
+var current='stats';
+try{var h=location.hash.replace('#','');if(h&&(blockDef(h)||h==='brand'||h==='guide'||h==='backup'))current=h;}catch(e){}
+var nav=document.getElementById('nav'),work=document.getElementById('work'),edP=document.getElementById('editorPane'),pvP=document.getElementById('previewPane');
+
+function missingCount(){return MISSING.filter(function(m){return !String(state.brand[m[0]]||'').trim();}).length;}
+function renderNav(){
+  var h='<h2>基本資料</h2>'+navBtn('brand','◎','品牌資訊',missingCount()>0)+'<h2>嵌入區塊</h2>';
+  BLOCKS.forEach(function(b,i){h+=navBtn(b.id,i+1,b.name,!!b.warn);});
+  h+='<h2>說明與工具</h2>'+navBtn('guide','?','網站規劃指南')+navBtn('backup','⇅','備份與還原');
+  nav.innerHTML=h;
+  nav.querySelectorAll('button').forEach(function(b){b.onclick=function(){go(b.getAttribute('data-id'));};});
+}
+function navBtn(id,n,label,dot){return '<button type="button" data-id="'+id+'" aria-current="'+(current===id)+'"><span class="n">'+n+'</span>'+esc(label)+(dot?'<span class="dot" title="有待補資料或範例內容"></span>':'')+'</button>';}
+function go(id){current=id;try{history.replaceState(null,'','#'+id);}catch(e){}renderNav();render();window.scrollTo({top:0});}
+
+function render(){
+  var codeWrap=document.getElementById('codeWrap');codeWrap.hidden=true;
+  if(current==='guide'){work.classList.add('full');pvP.hidden=true;edP.innerHTML='<div class="pane-b guide">'+guideHTML()+'</div>';return;}
+  if(current==='backup'){work.classList.add('full');pvP.hidden=true;renderBackup();return;}
+  work.classList.remove('full');pvP.hidden=false;
+  if(current==='brand'){renderBrand();previewId='contact';schedule(0);return;}
+  var def=blockDef(current);previewId=current;
+  edP.innerHTML='<div class="pane-h"><h2>'+esc(def.name)+'</h2><dl class="meta"><dt>用途</dt><dd>'+esc(def.use)+'</dd><dt>放置位置</dt><dd>'+esc(def.place)+'</dd><dt>建議高度</dt><dd id="metaH">測量中…</dd></dl></div><div class="pane-b" id="form"></div>';
+  var form=document.getElementById('form');
+  if(def.warn)form.insertAdjacentHTML('beforeend','<div class="note">'+esc(def.warn)+'</div>');
+  if(def.tip)form.insertAdjacentHTML('beforeend','<div class="note info">'+esc(def.tip)+'</div>');
+  buildFields(form,def.fields,state.blocks[current],function(){schedule();save();},function(){render();schedule();save();});
+  schedule(0);
+}
+function renderBrand(){
+  var miss=MISSING.filter(function(m){return !String(state.brand[m[0]]||'').trim();});
+  edP.innerHTML='<div class="pane-h"><h2>品牌資訊</h2><dl class="meta"><dt>說明</dt><dd>這裡的電話、LINE、網址會自動套用到所有區塊。預覽區顯示的是「聯絡按鈕列」。</dd></dl></div><div class="pane-b" id="form"></div>';
+  var form=document.getElementById('form');
+  if(miss.length)form.insertAdjacentHTML('beforeend','<div class="note" id="missNote">待補資料：'+miss.map(function(m){return m[1];}).join('、')+'</div>');
+  buildFields(form,BRAND_FIELDS,state.brand,function(){schedule();save();renderNav();var n=document.getElementById('missNote');var mm=MISSING.filter(function(m){return !String(state.brand[m[0]]||'').trim();});if(n){if(mm.length)n.textContent='待補資料：'+mm.map(function(m){return m[1];}).join('、');else n.remove();}},function(){render();});
+}
+
+/* 表單產生 */
+function uid(){return 'f'+Math.random().toString(36).slice(2,9);}
+function buildFields(parent,fields,obj,onInput,onStruct){
+  fields.forEach(function(f){
+    if(f.row){var r=document.createElement('div');r.className='two';parent.appendChild(r);buildFields(r,f.row,obj,onInput,onStruct);return;}
+    var w=document.createElement('div');w.className='f';var id=uid();
+    if(f.t==='list'){renderList(w,f,obj,onInput,onStruct);parent.appendChild(w);return;}
+    if(f.t==='check'){
+      w.innerHTML='<label class="chk"><input type="checkbox" id="'+id+'"'+(obj[f.k]?' checked':'')+'> '+esc(f.l)+'</label>';
+      w.querySelector('input').onchange=function(e){obj[f.k]=e.target.checked;onInput();};
+      parent.appendChild(w);return;
+    }
+    var lab='<label for="'+id+'">'+esc(f.l)+'</label>',ctl;
+    if(f.t==='textarea')ctl='<textarea id="'+id+'" rows="3">'+esc(obj[f.k])+'</textarea>';
+    else if(f.t==='select')ctl='<select id="'+id+'">'+f.o.map(function(o){return '<option value="'+o[0]+'"'+(String(obj[f.k])===o[0]?' selected':'')+'>'+esc(o[1])+'</option>';}).join('')+'</select>';
+    else if(f.t==='icon')ctl='<div class="iconpick"><span class="sw">'+svg(obj[f.k])+'</span><select id="'+id+'">'+ICON_OPTS.map(function(o){return '<option value="'+o[0]+'"'+(obj[f.k]===o[0]?' selected':'')+'>'+esc(o[1])+'</option>';}).join('')+'</select></div>';
+    else ctl='<input id="'+id+'" type="'+(f.t==='number'?'number':f.t==='url'?'url':'text')+'" value="'+esc(obj[f.k])+'"'+(f.t==='url'?' placeholder="https://"':'')+'>';
+    w.innerHTML=lab+ctl+(f.h?'<span class="h">'+esc(f.h)+'</span>':'');
+    var el=w.querySelector('#'+id);
+    var ev=(f.t==='select'||f.t==='icon')?'change':'input';
+    el.addEventListener(ev,function(){
+      var v=el.value;if(f.t==='number')v=v===''?0:Number(v);if(f.k==='stars')v=Number(v);
+      obj[f.k]=v;
+      if(f.t==='icon')w.querySelector('.sw').innerHTML=svg(v);
+      if(f.lab)f.lab();
+      onInput();
+      var sm=w.closest('.item');if(sm&&sm._upd)sm._upd();
+    });
+    parent.appendChild(w);
+  });
+}
+var openItems={};
+function renderList(w,f,obj,onInput,onStruct){
+  var arr=obj[f.k];
+  w.innerHTML='<span class="lbl">'+esc(f.l)+'（'+arr.length+'）</span>';
+  var ls=document.createElement('div');ls.className='list';w.appendChild(ls);
+  arr.forEach(function(it,i){
+    var d=document.createElement('details');d.className='item';
+    var key=current+'.'+f.k+'.'+i;if(openItems[key])d.open=true;
+    d.addEventListener('toggle',function(){openItems[key]=d.open;});
+    d.innerHTML='<summary><span class="chev">›</span><span class="t"></span><span class="tools">'+
+      '<button type="button" class="tb" data-a="up" aria-label="上移"'+(i===0?' disabled':'')+'>↑</button>'+
+      '<button type="button" class="tb" data-a="down" aria-label="下移"'+(i===arr.length-1?' disabled':'')+'>↓</button>'+
+      '<button type="button" class="tb" data-a="dup">複製</button>'+
+      '<button type="button" class="tb del" data-a="del">刪除</button></span></summary><div class="body"></div>';
+    var t=d.querySelector('.t');d._upd=function(){t.textContent=(i+1)+'. '+(f.lab?f.lab(it,i):'項目');};d._upd();
+    d.querySelectorAll('.tb').forEach(function(b){b.addEventListener('click',function(e){
+      e.preventDefault();e.stopPropagation();var a=b.getAttribute('data-a');
+      if(a==='del'){
+        if(!b.classList.contains('arm')){b.classList.add('arm');b.textContent='確定刪除？';setTimeout(function(){b.classList.remove('arm');b.textContent='刪除';},3000);return;}
+        arr.splice(i,1);
+      }else if(a==='up'&&i>0){arr.splice(i-1,0,arr.splice(i,1)[0]);}
+      else if(a==='down'&&i<arr.length-1){arr.splice(i+1,0,arr.splice(i,1)[0]);}
+      else if(a==='dup'){arr.splice(i+1,0,JSON.parse(JSON.stringify(it)));}
+      openItems={};onStruct();
+    });});
+    buildFields(d.querySelector('.body'),f.f,it,onInput,onStruct);
+    ls.appendChild(d);
+  });
+  var add=document.createElement('button');add.type='button';add.className='add';add.textContent='＋ 新增'+f.name;
+  add.onclick=function(){arr.push(JSON.parse(JSON.stringify(f.add)));openItems={};openItems[current+'.'+f.k+'.'+(arr.length-1)]=true;onStruct();};
+  w.appendChild(add);
+}
+
+/* ---------------- 預覽 ---------------- */
+var previewId='stats',dev='d',pvT=null;
+var frD=document.getElementById('frD'),frM=document.getElementById('frM'),siteD=document.getElementById('siteD'),siteM=document.getElementById('siteM'),stage=document.getElementById('stage');
+function schedule(ms){clearTimeout(pvT);pvT=setTimeout(updatePreview,ms==null?250:ms);}
+function srcdoc(code,tag){
+  return '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>'+code+
+  SO+'(function(){function s(){var el=document.querySelector("section");var h=el?Math.ceil(el.getBoundingClientRect().height):document.body.scrollHeight;parent.postMessage({jiaan:"'+tag+'",h:h},"*")}'+
+  'if(window.ResizeObserver)new ResizeObserver(s).observe(document.body);window.addEventListener("load",s);setTimeout(s,60);setTimeout(s,800);'+
+  'document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(a&&/^(tel:|#)/.test(a.getAttribute("href")))e.preventDefault()})})();'+SC+'</body></html>';
+}
+var lastCode='';
+function updatePreview(){
+  var code=buildCode(previewId,false);
+  if(code===lastCode){fit();return;}
+  lastCode=code;
+  frD.srcdoc=srcdoc(code,'d');frM.srcdoc=srcdoc(code,'m');
+}
+window.addEventListener('message',function(e){
+  var d=e.data;if(!d||!d.jiaan)return;
+  var m=measures[previewId]=measures[previewId]||{};
+  if(d.jiaan==='d'&&e.source===frD.contentWindow){m.d=d.h;frD.style.height=d.h+'px';}
+  if(d.jiaan==='m'&&e.source===frM.contentWindow){m.m=d.h;frM.style.height=d.h+'px';}
+  fit();showH();
+});
+function showH(){
+  var m=measures[previewId]||{};
+  var txt=(m.d||m.m)?'建議嵌入高度：桌機 <b>'+rec(m.d)+'px</b>／手機 <b>'+rec(m.m)+'px</b>':'測量中…';
+  document.getElementById('hgt').innerHTML=txt;
+  var mh=document.getElementById('metaH');
+  if(mh)mh.innerHTML=(m.d||m.m)?'桌機約 <b>'+rec(m.d)+'px</b>／手機約 <b>'+rec(m.m)+'px</b>（依目前內容實測，內容改了會自動更新）':'測量中…';
+}
+function fit(){
+  var avail=stage.clientWidth-36;
+  [[siteD,frD,1000,'d'],[siteM,frM,360,'m']].forEach(function(x){
+    var site=x[0],fr=x[1],W=x[2],m=measures[previewId]||{},h=m[x[3]]||300;
+    var sc=Math.min(1,avail/W);
+    fr.style.width=W+'px';
+    site.style.width=W+'px';site.style.height=h+'px';
+    site.style.transform=sc<1?'scale('+sc+')':'none';
+    site.style.marginBottom=sc<1?(-(h*(1-sc)))+'px':'0';
+    site.style.marginLeft=sc<1?'0':'auto';site.style.marginRight=sc<1?'0':'auto';
+  });
+}
+window.addEventListener('resize',fit);
+function setDev(v){dev=v;document.getElementById('devD').setAttribute('aria-pressed',v==='d');document.getElementById('devM').setAttribute('aria-pressed',v==='m');
+  siteD.hidden=false;siteM.hidden=false;
+  siteD.classList.toggle('offscreen',v!=='d');siteM.classList.toggle('offscreen',v!=='m');fit();}
+document.getElementById('devD').onclick=function(){setDev('d');};
+document.getElementById('devM').onclick=function(){setDev('m');};
+setDev('d');
+
+function flash(msg){var t=document.getElementById('toast');t.textContent=msg;}
+document.getElementById('showCode').onclick=function(){
+  var w=document.getElementById('codeWrap'),box=document.getElementById('codeBox');
+  if(!w.hidden){w.hidden=true;this.textContent='查看程式碼';return;}
+  box.value=buildCode(previewId,true);w.hidden=false;flash('');this.textContent='收起程式碼';
+};
+document.getElementById('copyCode').onclick=function(){
+  var code=buildCode(previewId,true),w=document.getElementById('codeWrap'),box=document.getElementById('codeBox');
+  box.value=code;
+  function fallback(){w.hidden=false;box.focus();box.select();flash('已幫您選取程式碼，請按 Ctrl+C（Mac 按 ⌘+C）複製。');}
+  try{navigator.clipboard.writeText(code).then(function(){w.hidden=false;flash('已複製「'+blockDef(previewId).name+'」嵌入程式碼，到協作平台貼上即可。');},fallback);}catch(e){fallback();}
+};
+
+/* ---------------- 備份 ---------------- */
+function renderBackup(){
+  edP.innerHTML='<div class="pane-h"><h2>備份與還原</h2><dl class="meta"><dt>說明</dt><dd>內容會自動存在這台電腦的瀏覽器。換電腦、清除瀏覽紀錄前，請先複製下方備份文字，存到記事本或 Google 文件。</dd></dl></div>'+
+  '<div class="pane-b">'+
+  '<div class="f"><label for="bk">目前內容的備份文字</label><textarea id="bk" class="codebox" readonly spellcheck="false"></textarea></div>'+
+  '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn primary" id="bkCopy">複製備份文字</button><span class="toast" id="bkMsg" aria-live="polite"></span></div>'+
+  '<div class="f"><label for="rs">還原：貼上之前的備份文字</label><textarea id="rs" class="codebox" spellcheck="false" placeholder="{ &quot;brand&quot;: … }"></textarea></div>'+
+  '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn navy" id="rsGo">還原內容</button><label class="btn" for="rsFile">從檔案匯入</label><input type="file" id="rsFile" accept=".json,.txt,application/json" hidden></div>'+
+  '<hr style="border:0;border-top:1px solid var(--line);width:100%">'+
+  '<div class="f"><span class="lbl">一次複製全部區塊</span><span class="h">把 10 個區塊的嵌入程式碼依序合在一起，方便存檔。貼到協作平台時仍請一個區塊一個區塊貼。</span></div>'+
+  '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn" id="allCopy">複製全部區塊程式碼</button></div>'+
+  '<hr style="border:0;border-top:1px solid var(--line);width:100%">'+
+  '<div class="f"><span class="lbl">恢復成範例內容</span><span class="h">會清掉目前所有修改，建議先複製備份。</span></div>'+
+  '<div><button type="button" class="btn" id="reset">恢復範例內容</button></div></div>';
+  var bk=document.getElementById('bk');bk.value=JSON.stringify(state,null,2);
+  var msg=document.getElementById('bkMsg');
+  function copy(text,ok,el){try{navigator.clipboard.writeText(text).then(function(){msg.textContent=ok;},function(){el.focus();el.select();msg.textContent='已選取，請按 Ctrl+C 複製。';});}catch(e){el.focus();el.select();msg.textContent='已選取，請按 Ctrl+C 複製。';}}
+  document.getElementById('bkCopy').onclick=function(){copy(bk.value,'已複製備份文字。',bk);};
+  document.getElementById('allCopy').onclick=function(){var all=BLOCKS.map(function(b){return buildCode(b.id,true);}).join('\n\n');bk.value=all;copy(all,'已複製全部區塊程式碼（上方文字框也換成程式碼了）。',bk);};
+  document.getElementById('rsGo').onclick=function(){
+    try{var v=JSON.parse(document.getElementById('rs').value);if(!v||!v.blocks||!v.brand)throw 0;state=merge(defaults(),v);save();renderNav();renderBackup();document.getElementById('bkMsg').textContent='已還原。';}
+    catch(e){msg.textContent='還原失敗：貼上的內容不是完整的備份文字，請重新複製後再試。';msg.style.color='var(--danger)';}
+  };
+  document.getElementById('rsFile').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){document.getElementById('rs').value=r.result;document.getElementById('rsGo').click();};r.readAsText(f);};
+  var rb=document.getElementById('reset');
+  rb.onclick=function(){if(!rb.classList.contains('arm')){rb.classList.add('arm');rb.textContent='再按一次確定恢復';rb.style.background='var(--danger)';rb.style.color='#fff';setTimeout(function(){rb.classList.remove('arm');rb.textContent='恢復範例內容';rb.style.background='';rb.style.color='';},4000);return;}
+    state=defaults();save();renderNav();renderBackup();document.getElementById('bkMsg').textContent='已恢復範例內容。';};
+}
+
+/* ---------------- 網站規劃指南 ---------------- */
+function guideHTML(){
+  var b=state.brand,ph=fmtPhone(b.phone)||'【電話】',ar=b.areas||'高雄、台南、屏東',nm=b.name||'家安工程行';
+  function pg(title,items){return '<div class="pg"><h3>'+title+'</h3><ol>'+items.map(function(x){return '<li class="'+(x[0]==='e'?'emb':'nat')+'">'+x[1]+'</li>';}).join('')+'</ol></div>';}
+  return ''+
+  '<h2>一、怎麼貼到協作平台</h2><ol>'+
+  '<li>在本工具左邊點選要用的區塊，修改內容，右邊確認預覽。</li>'+
+  '<li>按「複製嵌入程式碼」。</li>'+
+  '<li>到 Google 協作平台：右側「插入」→「嵌入」→ 選「嵌入程式碼」分頁 → 貼上 →「下一步」→「插入」。</li>'+
+  '<li>拖曳嵌入框下緣，把高度調到預覽上方顯示的「建議嵌入高度」。寬度請拉滿整個版面。</li>'+
+  '<li>協作平台的嵌入框桌機和手機共用同一個高度設定，所以本工具把卡片在手機上改成左右滑動，讓兩邊高度接近。請以兩個數字中<strong>較大的</strong>為準，並用協作平台右上角的「預覽」切換手機檢查一次。</li>'+
+  '<li>之後要改內容：回到本工具修改 → 再複製一次 → 在協作平台點該嵌入框的「編輯」圖示 → 全選後貼上新的程式碼。</li></ol>'+
+  '<p><span style="color:var(--muted)">粗體 = 本工具的嵌入區塊；一般字 = 協作平台內建功能。</span></p>'+
+  '<h2>二、建議頁面架構與區塊順序</h2><div class="pages">'+
+  pg('首頁',[['n','頁首大圖（內建「標題」橫幅＋師傅工作照＋標語）'],['e','信任數字列'],['e','公告／優惠橫幅（需要時）'],['e','服務項目卡片'],['e','為什麼選擇我們'],['e','施工前後對比滑桿（1 組精選）'],['e','客戶評價輪播'],['e','聯絡按鈕列']])+
+  pg('服務項目',[['n','頁面標題＋一段簡介文字'],['e','服務項目卡片'],['n','各服務詳細說明（內建文字＋圖片，可用「可摺疊文字」）'],['e','施工流程時間軸'],['e','常見問題手風琴'],['e','聯絡按鈕列']])+
+  pg('施工實績',[['n','頁面標題＋說明'],['e','施工前後對比滑桿（多組案例）'],['n','內建「圖片輪播」或相簿：施工過程照片'],['e','客戶評價輪播'],['e','聯絡按鈕列']])+
+  pg('線上商城',[['n','頁面標題＋「為什麼推薦這些商品」'],['e','精選商品'],['n','購物說明：運費、出貨時間、退換貨（內建文字）'],['n','內建「按鈕」：前往蝦皮／露天賣場'],['e','聯絡按鈕列']])+
+  pg('聯絡我們',[['e','聯絡按鈕列'],['n','內建「表單」：嵌入 Google 估價表單'],['n','內建「地圖」：店面位置'],['n','營業時間、服務區域、地址文字'],['e','常見問題手風琴']])+
+  '</div>'+
+  '<h2>三、Google 估價表單建議欄位</h2><div class="tbl"><table><thead><tr><th>欄位</th><th>題型</th><th>必填</th><th>選項／說明</th></tr></thead><tbody>'+
+  [['您的稱呼','簡答','是','例如：陳先生、王小姐'],['聯絡電話','簡答','是','設定「回應驗證」→ 規則運算式，避免填錯'],['LINE ID','簡答','否','方便傳照片討論'],['施工地點','下拉選單','是',ar.split(/[、,，]/).join('／')+'／其他'],['行政區／路名','簡答','是','例如：鳳山區光復路（不用寫門牌）'],['房屋類型','單選','是','透天／公寓／大樓／店面／辦公室／其他'],['屋齡','單選','否','10 年內／10–20 年／20–30 年／30 年以上／不清楚'],['需要的服務','核取方塊','是','水電／弱電／室內裝潢／泥作／其他'],['問題或需求描述','段落','是','提示：哪裡壞了、想改成什麼樣子、大概多大範圍'],['希望施工時間','單選','否','越快越好／一個月內／1–3 個月／還在評估'],['預算範圍','單選','否','1 萬以下／1–5 萬／5–20 萬／20 萬以上／想先聽建議'],['方便聯絡的時段','核取方塊','否','上午／中午／下午／晚上'],['怎麼知道我們的','單選','否','Google 搜尋／Google 地圖／親友介紹／Facebook／蝦皮／其他'],['個資同意','核取方塊','是','「我同意'+nm+'使用以上資料聯絡我並提供報價」']].map(function(r){return '<tr><td>'+r.join('</td><td>')+'</td></tr>';}).join('')+
+  '</tbody></table></div>'+
+  '<ul><li>表單說明寫：「填完後我們會在 1 個工作天內回電，到府估價免費。現場照片可以直接傳 LINE 給我們。」</li>'+
+  '<li>「檔案上傳」題型會要求客人登入 Google 帳號，長輩容易卡住，建議改請客人用 LINE 傳照片。</li>'+
+  '<li>在「回覆」分頁連結 Google 試算表，並開啟「收到新回覆時通知我」。</li></ul>'+
+  '<h2>四、SEO 與網站設定建議</h2>'+
+  '<h3>網站名稱與標誌（設定 → 品牌）</h3><ul><li>網站名稱：<code>'+esc(nm)+'｜'+esc(ar.replace(/[、,，]/g,'・'))+' 水電・裝潢・泥作</code></li><li>上傳品牌標誌與網站小圖示（Favicon，建議 512×512 正方形 PNG）。</li></ul>'+
+  '<h3>各頁標題（頁面上方大標題就是搜尋結果會看到的標題）</h3><div class="tbl"><table><thead><tr><th>頁面</th><th>頁面標題（頁首文字）</th><th>自訂網址路徑</th></tr></thead><tbody>'+
+  [['首頁',esc(nm)+'｜'+esc(ar.split(/[、,，]/)[0]||'高雄')+'水電・室內裝潢・泥作統包','（首頁）'],['服務項目','水電、弱電、裝潢、泥作工程服務｜'+esc(nm),'/services'],['施工實績','施工前後實績與客戶評價｜'+esc(nm),'/works'],['線上商城','師傅推薦五金衛浴好物｜'+esc(nm),'/shop'],['聯絡我們','免費到府估價・聯絡方式｜'+esc(nm),'/contact']].map(function(r){return '<tr><td>'+r.join('</td><td>')+'</td></tr>';}).join('')+
+  '</tbody></table></div>'+
+  '<ul><li>自訂網址路徑：在左側「頁面」點頁面旁的「⋮」→「屬性」→「進階」設定，路徑用英文小寫。</li>'+
+  '<li>協作平台無法自訂描述（meta description），搜尋結果常抓頁面第一段文字。請在每頁頁首下方放一段 60–80 字、包含「地區＋服務」的介紹，例如：「'+esc(nm)+'提供'+esc(ar)+'地區水電維修、漏水檢測、浴室翻修與室內裝潢，到府免費估價，報價透明不追加，完工提供保固。」</li>'+
+  '<li>本工具的嵌入區塊放在 iframe 內，搜尋引擎多半<strong>不會</strong>算進頁面內容。重要的關鍵字（服務名稱、地區、電話）請也用協作平台內建文字寫一次。</li>'+
+  '<li>圖片加上替代文字：點圖片 →「⋮」→「新增替代文字」，例如「高雄鳳山浴室翻新施工後」。</li>'+
+  '<li>設定 →「自訂網域」綁定自己的網域（例如 jiaan.com.tw），看起來更正式。</li>'+
+  '<li>設定 →「數據分析」填入 Google Analytics 評估 ID；並到 Google Search Console 提交網站。</li>'+
+  '<li>最重要：建立並驗證「Google 商家檔案」，網站連到協作平台，店名、電話 '+esc(ph)+'、地址在網站、商家檔案、Facebook、蝦皮都寫成一模一樣。在地客人大多從 Google 地圖找師傅。</li>'+
+  '<li>常用關鍵字可自然寫進文字：<code>'+esc((ar.split(/[、,，]/)[0]||'高雄'))+'水電行</code>、<code>抓漏</code>、<code>浴室翻修</code>、<code>壁癌處理</code>、<code>配電箱更換</code>、<code>監視器安裝</code>、<code>老屋翻新</code>。</li></ul>'+
+  '<h2>五、建議拍攝的照片清單</h2><div class="tbl"><table><thead><tr><th>用途</th><th>拍什麼</th><th>拍攝重點</th></tr></thead><tbody>'+
+  [['首頁大圖','師傅穿制服在工地工作、團隊合照','橫拍 16:9，人物在畫面一側，留空間放標語'],['施工前後對比','同一位置施工前、施工後各一張（每案 2–3 組）','站同一個位置、同樣高度、同樣焦距；開燈，盡量自然光'],['施工過程','配管、配電箱整線、防水層、打底、磁磚對縫','近拍細節，展現「看不到的地方也做確實」'],['服務項目','水電、弱電、裝潢、泥作代表性完工照各 2–3 張','畫面整齊、清潔完再拍'],['信任感','工程車（含店名電話）、店面招牌、工具與材料','招牌要清楚可讀'],['證照','室內配線技術士、相關證照、保險證明','拍正面不反光，可遮掉證號後幾碼'],['客戶交屋','師傅與客戶在完工現場（需同意）','不拍到門牌、車牌、客戶臉部（除非同意）'],['商品','每項商品白底照 1 張＋使用情境 1 張','正方形或 4:3，商品置中'],['報價單／保固卡','樣張（遮蔽個資）','讓客人看到「透明報價」長什麼樣子']].map(function(r){return '<tr><td>'+r.join('</td><td>')+'</td></tr>';}).join('')+
+  '</tbody></table></div><ul><li>手機拍攝請擦鏡頭、橫拍、不要用數位變焦；每張照片不用超過 2000px 寬。</li><li>拍攝前後照時，在手機相簿用「同一個角度」的舊照片當參考構圖。</li></ul>'+
+  '<h2 id="img">六、照片網址怎麼取得</h2><ol>'+
+  '<li><strong>Google 雲端硬碟</strong>：上傳照片 → 右鍵「共用」→ 一般存取權改為「知道連結的任何人」→ 複製連結。連結中 <code>/d/</code> 和 <code>/view</code> 之間那串就是檔案 ID。</li>'+
+  '<li>把網址改成：<code>https://lh3.googleusercontent.com/d/檔案ID</code>，貼到本工具的照片欄位。</li>'+
+  '<li>也可以用蝦皮商品頁的圖片：在圖片上按右鍵「複製圖片位址」。</li>'+
+  '<li>外部照片在本工具預覽中可能不會顯示（瀏覽器安全限制），貼到協作平台後就會正常顯示。</li></ol>';
+}
+
+renderNav();render();
+})();
+</script>
