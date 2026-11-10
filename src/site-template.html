@@ -123,6 +123,81 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   .device.phone{border-width:0;border-radius:10px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ---- 華麗樣式層 ---- */
+:root{--go:linear-gradient(135deg,#FFC06A 0%,#F28C28 52%,#E2701A 100%);--gn:linear-gradient(145deg,#2B5088 0%,#1F3A5F 46%,#132640 100%)}
+@keyframes sp-shine{0%,55%{left:-60%}100%{left:130%}}
+@keyframes sp-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes sp-up{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+.device{background:linear-gradient(180deg,#FAF8F5 0%,#F4F1EC 100%)}
+.s-head{position:relative;background:rgba(255,255,255,.92);border-bottom:0;box-shadow:0 10px 30px -20px rgba(20,40,68,.5)}
+.s-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,#1F3A5F,#F28C28 50%,#1F3A5F)}
+.logo span.m{background:var(--gn);box-shadow:0 10px 16px -8px rgba(31,58,95,.9),inset 0 1px 0 rgba(255,255,255,.25)}
+.logo svg{stroke:#FFCB7D}
+.s-nav button{transition:background .2s,color .2s}
+.s-nav button[aria-current="page"]{box-shadow:none;background:var(--gn);color:#fff}
+.s-nav .cta{background:var(--go);color:#1B2A3E;font-weight:900;margin-left:8px;box-shadow:0 10px 18px -8px rgba(242,140,40,.8)}
+.s-nav .cta:hover{background:var(--go);filter:brightness(1.06)}
+.sbtn{position:relative;overflow:hidden;transition:transform .25s,filter .25s}
+.sbtn:hover{transform:translateY(-3px)}
+.sbtn.o{background:var(--go);box-shadow:0 14px 26px -10px rgba(242,140,40,.8),inset 0 1px 0 rgba(255,255,255,.5);font-weight:900}
+.sbtn.o::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);animation:sp-shine 3.6s ease-in-out infinite}
+.sbtn.w{-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);background:rgba(255,255,255,.08)}
+.sbtn.n{background:var(--gn)}
+.hero{min-height:560px;overflow:hidden;background:
+  radial-gradient(700px 420px at 88% 8%,rgba(242,140,40,.42),transparent 62%),
+  radial-gradient(620px 420px at 4% 105%,rgba(96,150,225,.45),transparent 62%),
+  linear-gradient(100deg,rgba(15,30,54,.96) 0%,rgba(31,58,95,.86) 50%,rgba(31,58,95,.5) 100%),var(--ph);background-size:cover;background-position:center}
+.hero::before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px) 0 0/100% 40px,linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px) 0 0/40px 100%;-webkit-mask-image:radial-gradient(ellipse at 30% 40%,#000,transparent 75%);mask-image:radial-gradient(ellipse at 30% 40%,#000,transparent 75%)}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:70px;background:#FAF8F5;clip-path:ellipse(62% 100% at 50% 100%)}
+.hero .in{position:relative;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:36px;align-items:center;padding-bottom:40px}
+.hero .in>*{animation:sp-up .9s cubic-bezier(.2,.7,.2,1) both}
+.hero .in>*:nth-child(2){animation-delay:.25s}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:5px 16px;border-radius:999px;border:1px solid rgba(255,203,125,.55);background:rgba(255,203,125,.12);color:#FFCB7D;font-size:14px;font-weight:700;letter-spacing:.14em;margin-bottom:18px}
+.eyebrow::before{content:"";width:8px;height:8px;border-radius:50%;background:#FFCB7D;box-shadow:0 0 12px #F28C28}
+.hero h1{font-size:56px;line-height:1.2;text-shadow:0 6px 30px rgba(0,0,0,.35)}
+.hero h1 em{font-style:normal;background:linear-gradient(180deg,#FFE2B4,#F28C28);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:19.5px}
+.chips{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:26px;font-size:15px;color:rgba(255,255,255,.92)}
+.chips span{display:inline-flex;align-items:center;gap:7px}
+.chips span::before{content:"✓";display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--go);color:#1B2A3E;font-size:12px;font-weight:900}
+.glass{border-radius:22px;padding:26px;background:linear-gradient(160deg,rgba(255,255,255,.2),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.3);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 40px 70px -30px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.35);color:#fff}
+.hero .in>.glass{animation:sp-up .9s .25s cubic-bezier(.2,.7,.2,1) both,sp-float 6s 1.2s ease-in-out infinite}
+.glass small{display:block;font-size:13px;letter-spacing:.2em;color:#FFCB7D;font-weight:700}
+.glass .tel{font-size:36px;font-weight:900;letter-spacing:.03em;line-height:1.3;margin:4px 0 12px;font-variant-numeric:tabular-nums}
+.glass ul{list-style:none;margin:0 0 18px;padding:14px 0 0;border-top:1px solid rgba(255,255,255,.22);display:grid;gap:8px;font-size:15px}
+.glass li{display:flex;gap:8px;align-items:center}
+.glass li::before{content:"";width:7px;height:7px;transform:rotate(45deg);background:#FFCB7D;flex:none}
+.glass .sbtn{width:100%}
+.banner{position:relative;overflow:hidden;padding-top:54px!important;padding-bottom:60px!important;background:
+  radial-gradient(520px 300px at 90% 0%,rgba(242,140,40,.4),transparent 62%),
+  linear-gradient(100deg,rgba(15,30,54,.96),rgba(31,58,95,.78)),var(--ph);background-size:cover;background-position:center}
+.banner::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:34px;background:#FAF8F5;clip-path:ellipse(62% 100% at 50% 100%)}
+.banner h1{font-size:42px;font-weight:900;letter-spacing:.08em;text-shadow:0 6px 30px rgba(0,0,0,.35)}
+.banner h1::after{content:"";display:block;width:64px;height:4px;border-radius:4px;background:var(--go);margin-top:12px;box-shadow:0 0 16px rgba(242,140,40,.8)}
+.txt h2{font-weight:900;font-size:30px;background:linear-gradient(95deg,#16304F,#2F5E9C);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.lead{position:relative;background:#fff;border-radius:16px;padding:22px 26px 22px 30px;box-shadow:0 22px 44px -26px rgba(20,40,68,.45);font-size:17px;overflow:hidden}
+.lead::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--go)}
+.lead p{margin:0;max-width:none}
+.pimg{border-radius:16px;box-shadow:0 22px 44px -26px rgba(20,40,68,.55);border:4px solid #fff;transition:transform .35s}
+.pimg:hover{transform:translateY(-5px)}
+.gform{border-radius:16px;box-shadow:0 26px 50px -28px rgba(20,40,68,.55);border:0}
+.map{border-radius:16px;border:4px solid #fff;box-shadow:0 26px 50px -28px rgba(20,40,68,.55)}
+.dl{background:#fff;border-radius:16px;padding:20px 24px;box-shadow:0 22px 44px -26px rgba(20,40,68,.45);max-width:520px}
+.s-foot{position:relative;background:radial-gradient(520px 260px at 90% 0%,rgba(242,140,40,.25),transparent 62%),linear-gradient(145deg,#1B3152,#0F1D33);padding:34px 28px}
+.s-foot::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,transparent,#FFCB7D,#F28C28,#FFCB7D,transparent)}
+.s-foot b{font-size:18px;letter-spacing:.08em}
+#page>.sec.embed:last-child{padding-bottom:30px}
+.phone .hero{min-height:0;padding-top:34px;padding-bottom:30px}
+.phone .hero .in{grid-template-columns:1fr;gap:22px;padding-bottom:26px}
+.phone .hero h1{font-size:34px}
+.phone .hero p{font-size:16.5px}
+.phone .glass{padding:20px}.phone .glass .tel{font-size:30px}
+.phone .banner h1{font-size:30px}
+.phone .banner{padding-top:34px!important;padding-bottom:44px!important}
+.phone .s-nav .cta{display:none}
+.phone .txt h2{font-size:24px}
+@media (max-width:640px){.hero{min-height:0}.hero .in{grid-template-columns:1fr;gap:22px}.hero h1{font-size:34px}.banner h1{font-size:30px}.s-nav .cta{display:none}.glass .tel{font-size:30px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
 
 <div class="bar">
@@ -173,9 +248,11 @@ function pimg(t){return '<div class="pimg" style="--ph:'+ph(t,'#DCE4EE','#7D90A8
 
 var PAGES={
  home:{name:'首頁',secs:[
-  N('內建：標題橫幅（背景照片＋按鈕）','<div class="in"><h1>讓家安心的<br>在地水電工程行</h1><p>水電、弱電、室內裝潢、泥作一次包辦。到府免費估價，報價清楚不加價，完工有保固。</p><div class="btns"><button type="button" class="sbtn o" data-go="contact">免費估價</button><button type="button" class="sbtn w" data-go="services">看服務項目</button></div></div>','hero'),
+  N('內建：標題橫幅（背景照片＋按鈕）','<div class="in"><div><span class="eyebrow">高雄・台南・屏東　在地服務</span><h1>讓家<em>安心</em>的<br>在地水電工程行</h1><p>水電、弱電、室內裝潢、泥作一次包辦。到府免費估價，報價清楚不加價，完工有保固。</p><div class="btns"><button type="button" class="sbtn o" data-go="contact">免費估價</button><button type="button" class="sbtn w" data-go="services">看服務項目</button></div><div class="chips"><span>到府估價免費</span><span>報價透明不加價</span><span>完工提供保固</span></div></div>'+
+   '<aside class="glass"><small>預約專線</small><div class="tel">0936-665-982</div><ul><li>一通電話，師傅到府看現場</li><li>材料、工錢逐項寫清楚</li><li>同一組師傅做到好</li></ul><button type="button" class="sbtn o" data-go="contact">立即預約估價</button></aside></div>','hero'),
   E('stats'),
-  text('',['家安工程行服務高雄、台南、屏東地區，提供水電維修、漏水檢測、浴室翻修、壁癌處理與室內裝潢。從諮詢、到府勘查到施工、保固，都由同一組師傅負責，讓您省心又安心。']),
+  N('內建：文字方塊','<div class="in"><div class="lead"><p>家安工程行服務高雄、台南、屏東地區，提供水電維修、漏水檢測、浴室翻修、壁癌處理與室內裝潢。從諮詢、到府勘查到施工、保固，都由同一組師傅負責，讓您省心又安心。</p></div></div>'),
+  //text('',['家安工程行服務高雄、台南、屏東地區，提供水電維修、漏水檢測、浴室翻修、壁癌處理與室內裝潢。從諮詢、到府勘查到施工、保固，都由同一組師傅負責，讓您省心又安心。']),
   E('services'),E('why'),E('ba'),E('reviews'),E('contact')]},
  services:{name:'服務項目',secs:[
   banner('服務項目','水電、弱電、室內裝潢、泥作，大小工程都接'),
@@ -215,7 +292,7 @@ function frameDoc(code){
   'document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(a&&/^(tel:|#$)/.test(a.getAttribute("href")))e.preventDefault()})})();'+SC+'</body></html>';
 }
 function render(){
-  snav.innerHTML=ORDER.map(function(k){return '<button type="button" data-go="'+k+'"'+(k===cur?' aria-current="page"':'')+'>'+PAGES[k].name+'</button>';}).join('');
+  snav.innerHTML=ORDER.map(function(k){return '<button type="button" data-go="'+k+'"'+(k===cur?' aria-current="page"':'')+'>'+PAGES[k].name+'</button>';}).join('')+'<button type="button" class="cta" data-go="contact">免費估價</button>';
   page.innerHTML='';
   PAGES[cur].secs.forEach(function(s){
     var sec=document.createElement('section');
